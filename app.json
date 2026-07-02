@@ -5,74 +5,16 @@
   "repository": "https://github.com/TitanXBots/FileStore",
   "logo": "https://envs.sh/SP_.jpg",
   "env": {
-    "TG_BOT_TOKEN": {
-      "description": "Your Bot token, Get it from @Botfather",
-      "value": ""
-    },
-    "OWNER_ID": {
-      "description": "An integer of consisting of your owner ID",
-      "value": "5356695781"
-    },
-    "APP_ID":{
-      "description": "your app id, take it from my.telegram.org",
-      "value": ""
-    },
-    "DATABASE_URL": {
-      "description": "Paste your mongo db url",
-      "value": "url"
-    },
-    "DATABASE_NAME":{
-      "description": "Enter your DATABASE_NAME ",
-      "value": "filesharexbot"
-    },
-    "API_HASH":{
-      "description": "your api hash, take it from my.telegram.org",
-      "value": ""
-    },
-    "CHANNEL_ID":{
-      "description": "make a channel (database channel), then make the bot as admin in channel, and it's id",
-      "value": "-100"
-    },
-    "FORCE_SUB_CHANNEL_1":{
-      "description": "id of the channel or group, if you want enable force sub feature else put 0",
-      "value": "0"
-    },
-    "FORCE_SUB_CHANNEL_2":{
-      "description": "id of the channel or group, if you want enable force sub feature else put 0",
-      "value": "0"
-    },
-    "FORCE_SUB_CHANNEL_3":{
-      "description": "id of the channel or group, if you want enable force sub feature else put 0",
-      "value": "0"
-    },
-    "FORCE_SUB_CHANNEL_4":{
-      "description": "id of the channel or group, if you want enable force sub feature else put 0",
-      "value": "0"
-    },
-    "FORCE_SUB_MESSAGE": {
-      "description": "Optional: Force Sub message of bot",
-      "value": "Hello {first}\n\n<b>You need to join in my Channel/Group to use me\n\nKindly Please join Channel</b>"
-    },
-    "PROTECT_CONTENT": {
-      "description": "Protect contents from getting forwarded",
-      "value": "False",
-      "required": false
-    },
-    "FILE_AUTO_DELETE": {
-        "description": "auto delete in seconds",
-        "value": "600",
-        "required": false
-    }
+    "TG_BOT_TOKEN": { "description": "Your Bot token, Get it from @Botfather", "value": "" },
+    "OWNER_ID": { "description": "An integer of consisting of your owner ID", "value": "5356695781" },
+    "APP_ID": { "description": "your app id, take it from my.telegram.org", "value": "" },
+    "API_HASH": { "description": "your api hash, take it from my.telegram.org", "value": "" },
+    "DATABASE_URL": { "description": "Paste your mongo db url", "value": "" },
+    "DATABASE_NAME": { "description": "Enter your DATABASE_NAME", "value": "filesharexbot" },
+    "CHANNEL_ID": { "description": "make a channel (database channel), then make the bot as admin in channel, and it's id", "value": "-100" },
+    "FORCE_SUB_CHANNEL_1": { "description": "id of the channel or group, if you want enable force sub feature else put 0", "value": "0" },
+    "FORCE_SUB_MESSAGE": { "description": "Optional: Force Sub message of bot", "value": "Hello {first}\n\n<b>You need to join in my Channel/Group to use me\n\nKindly Please join Channel</b>" }
   },
-  "buildpacks": [
-    {
-      "url": "heroku/python"
-    }
-  ],
-  "formation": {
-    "web": {
-      "quantity": 1,
-      "size": "free"
-    }
-  }
+  "buildpacks": [ { "url": "heroku/python" } ],
+  "formation": { "web": { "quantity": 1, "size": "free" } }
 }
