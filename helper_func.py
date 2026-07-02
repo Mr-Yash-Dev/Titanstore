@@ -22,28 +22,21 @@ async def auto_delete(msg, delay=60):
 async def safe_edit(message, text, buttons=None):
     try:
         if message.text != text:
-            await message.edit_text(
-                text=text,
-                reply_markup=buttons,
-                disable_web_page_preview=True
-            )
+            await message.edit_text(text=text, reply_markup=buttons, disable_web_page_preview=True)
     except MessageNotModified:
         pass
     except:
         try:
-            await message.reply_text(
-                text=text,
-                reply_markup=buttons,
-                disable_web_page_preview=True
-            )
+            await message.reply_text(text=text, reply_markup=buttons, disable_web_page_preview=True)
         except:
             pass
 
 async def get_input(client, message, prompt):
     new_text = f"{prompt}\n\nSend /cancel to stop."
     try:
-        await message.reply_text(new_text)
-    except:
+        if message.text != new_text:
+            await message.edit_text(new_text)
+    except MessageNotModified:
         pass
 
     try:
@@ -63,9 +56,7 @@ async def get_input(client, message, prompt):
         return None
 
 async def subscribed(client, message) -> bool:
-    if not message.from_user:
-        return True
-        
+    if not message.from_user: return True
     user_id = message.from_user.id
     
     if await is_admin(user_id) or await is_owner(user_id):
@@ -74,9 +65,7 @@ async def subscribed(client, message) -> bool:
     channels = [FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4]
 
     for channel in channels:
-        if not channel or str(channel) == "0":
-            continue
-            
+        if not channel: continue
         try:
             chat_id = int(channel) if str(channel).startswith("-100") or str(channel).isdigit() else channel
             member = await client.get_chat_member(chat_id, user_id)
@@ -112,16 +101,10 @@ async def get_messages(client, message_ids):
     while total != len(message_ids):
         batch = message_ids[total:total + 200]
         try:
-            msgs = await client.get_messages(
-                chat_id=client.db_channel.id,
-                message_ids=batch
-            )
+            msgs = await client.get_messages(chat_id=client.db_channel.id, message_ids=batch)
         except FloodWait as e:
             await asyncio.sleep(e.value)
-            msgs = await client.get_messages(
-                chat_id=client.db_channel.id,
-                message_ids=batch
-            )
+            msgs = await client.get_messages(chat_id=client.db_channel.id, message_ids=batch)
         except:
             msgs = []
         messages.extend(msgs)
@@ -134,25 +117,18 @@ async def get_message_id(client, message):
             return message.forward_from_message_id
         return 0
 
-    if message.forward_sender_name:
-        return 0
-
+    if message.forward_sender_name: return 0
     if message.text:
         pattern = r"https://t.me/(?:c/)?([^/]+)/(\d+)"
         match = re.search(pattern, message.text)
-        if not match:
-            return 0
-
-        chat = match.group(1)
-        msg_id = int(match.group(2))
-
+        if not match: return 0
+        chat, msg_id = match.group(1), int(match.group(2))
+        
         if chat.isdigit() or chat.startswith("c/"):
-            clean_chat = chat.replace("c/", "")
-            if f"-100{clean_chat}" == str(client.db_channel.id):
+            if f"-100{chat.replace('c/', '')}" == str(client.db_channel.id):
                 return msg_id
-        else:
-            if client.db_channel.username and chat == client.db_channel.username:
-                return msg_id
+        elif client.db_channel.username and chat == client.db_channel.username:
+            return msg_id
     return 0
 
 def get_readable_time(seconds: int) -> str:
@@ -160,13 +136,9 @@ def get_readable_time(seconds: int) -> str:
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     result = []
-    if days:
-        result.append(f"{days}d")
-    if hours:
-        result.append(f"{hours}h")
-    if minutes:
-        result.append(f"{minutes}m")
-    if seconds or not result:
-        result.append(f"{seconds}s")
+    if days: result.append(f"{days}d")
+    if hours: result.append(f"{hours}h")
+    if minutes: result.append(f"{minutes}m")
+    if seconds or not result: result.append(f"{seconds}s")
     return " ".join(result)
     
