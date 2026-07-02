@@ -1,3 +1,8 @@
+
+# main.py
 from bot import Bot
 
-Bot().run()
+if __name__ == "__main__":
+    app = Bot()
+    app.run()
+  
