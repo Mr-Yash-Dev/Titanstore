@@ -6,13 +6,12 @@ from plugins import web_server
 import pyromod.listen
 from pyrogram import Client
 from pyrogram.enums import ParseMode
-
 import pyrogram.utils
 pyrogram.utils.MIN_CHANNEL_ID = -1009999999999
 
 from config import (
-    API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN,
-    TG_BOT_WORKERS, FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2,
+    API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS,
+    FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2,
     FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4,
     CHANNEL_ID, PORT
 )
@@ -25,101 +24,67 @@ class Bot(Client):
             api_id=APP_ID,
             plugins={"root": "plugins"},
             workers=TG_BOT_WORKERS,
-            bot_token=TG_BOT_TOKEN,
-            parse_mode=ParseMode.HTML
+            bot_token=TG_BOT_TOKEN
         )
-        self.LOGGER = LOGGER
+        self.logger = LOGGER(__name__)
 
     async def start(self):
         await super().start()
         me = await self.get_me()
-
         self.uptime = datetime.now()
         self.username = me.username
 
-        # -------------------------------
-        # FORCE SUB CHANNEL HANDLING
-        # -------------------------------
         self.invitelinks = {}
 
-        async def get_invite(channel_input, key_name, label):
-            # Skip if empty or set to 0
-            if not channel_input or str(channel_input) in ["0", "", "None"]:
+        async def get_invite(channel_id, key_name, label):
+            if not channel_id:
                 self.invitelinks[key_name] = None
                 return
-
             try:
-                # CRITICAL FIX: Explicitly convert to Integer if it is a Telegram ID
-                if str(channel_input).startswith("-100") or str(channel_input).isdigit():
-                    chat_id = int(channel_input)
-                else:
-                    chat_id = channel_input # Treat as public username string (e.g., @MyChannel)
-
-                # Fetch chat and invite link
-                chat = await self.get_chat(chat_id)
+                chat = await self.get_chat(channel_id)
                 link = chat.invite_link
-                
-                # Create a link if one doesn't exist
                 if not link:
-                    link = await self.export_chat_invite_link(chat_id)
-                
+                    link = await self.export_chat_invite_link(channel_id)
                 self.invitelinks[key_name] = link
-                self.LOGGER(__name__).info(f"✅ Force Sub Link generated for {label} ({chat_id})")
-                
+                self.logger.info(f"✅ Force Sub Link generated for {label} ({channel_id})")
             except Exception as e:
-                self.LOGGER(__name__).error(
-                    f"❌ FORCE SUB CRITICAL: Failed to get/generate link for {label} ({channel_input}). "
-                    f"Ensure the bot is an Admin with 'Invite Users via Link' permissions. Error: {e}"
-                )
+                self.logger.error(f"❌ FORCE SUB CRITICAL: Failed to get/generate link for {label} ({channel_id}). Error: {e}")
                 self.invitelinks[key_name] = None
 
-        # Fetch invite links asynchronously
         await get_invite(FORCE_SUB_CHANNEL_1, "fs1", "Channel 1")
         await get_invite(FORCE_SUB_CHANNEL_2, "fs2", "Channel 2")
         await get_invite(FORCE_SUB_CHANNEL_3, "fs3", "Channel 3")
         await get_invite(FORCE_SUB_CHANNEL_4, "fs4", "Channel 4")
 
-        # Expose properties to the client wrapper object
         self.invitelink = self.invitelinks.get("fs1")
         self.invitelink2 = self.invitelinks.get("fs2")
         self.invitelink3 = self.invitelinks.get("fs3")
         self.invitelink4 = self.invitelinks.get("fs4")
 
-        # -------------------------------
-        # DATABASE CHANNEL CHECK
-        # -------------------------------
         try:
             db_channel = await self.get_chat(CHANNEL_ID)
             self.db_channel = db_channel
             msg = await self.send_message(db_channel.id, "Test Message")
             await msg.delete()
-            self.LOGGER(__name__).info("✅ Database Channel verified successfully.")
+            self.logger.info("✅ Database Channel verified successfully.")
         except Exception as e:
-            self.LOGGER(__name__).error(f"❌ CRITICAL: Bot is not admin in DB channel or CHANNEL_ID is wrong: {CHANNEL_ID}. Error: {e}")
+            self.logger.error(f"❌ CRITICAL: Bot is not admin in DB channel or CHANNEL_ID is wrong: {CHANNEL_ID}. Error: {e}")
             sys.exit()
 
-        # -------------------------------
-        # WEB SERVER START
-        # -------------------------------
         try:
             app = web.AppRunner(await web_server())
             await app.setup()
             site = web.TCPSite(app, "0.0.0.0", PORT)
             await site.start()
-            self.LOGGER(__name__).info(f"✅ Web Server started successfully on port {PORT}")
+            self.logger.info(f"✅ Web Server started successfully on port {PORT}")
         except Exception as e:
-            self.LOGGER(__name__).warning(f"⚠️ Web Server failed to initialize: {e}")
+            self.logger.warning(f"⚠️ Web Server failed to initialize: {e}")
 
-        # -------------------------------
-        # FINAL LOGS
-        # -------------------------------
-        self.LOGGER(__name__).info("Bot Running..!\nCreated by https://t.me/TitanXBots")
-        self.LOGGER(__name__).info(f"Username: @{self.username}")
+        self.set_parse_mode(ParseMode.HTML)
+        self.logger.info(f"Bot Running..!\n\nCreated by TitanXBots")
+        self.logger.info(f"Username: @{self.username}")
 
     async def stop(self, *args):
         await super().stop()
-        self.LOGGER(__name__).info("Bot stopped.")
-
-if __name__ == "__main__":
-    Bot().run()
-    
+        self.logger.info("Bot stopped.")
+        
