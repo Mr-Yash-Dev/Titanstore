@@ -31,17 +31,12 @@ async def start_command(client: Client, message: Message):
         buttons = []
         if client.invitelink: buttons.append(InlineKeyboardButton("Join Channel 1", url=client.invitelink))
         if client.invitelink2: buttons.append(InlineKeyboardButton("Join Channel 2", url=client.invitelink2))
-        
         row2 = []
         if client.invitelink3: row2.append(InlineKeyboardButton("Join Channel 3", url=client.invitelink3))
         if client.invitelink4: row2.append(InlineKeyboardButton("Join Channel 4", url=client.invitelink4))
             
         keyboard = [buttons, row2] if row2 else [buttons]
-        return await message.reply_photo(
-            photo=FORCE_PIC,
-            caption=FORCE_MSG.format(first=first_name, last=last_name, username=username, mention=message.from_user.mention, id=user_id),
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        return await message.reply_photo(photo=FORCE_PIC, caption=FORCE_MSG.format(first=first_name, last=last_name, username=username, mention=message.from_user.mention, id=user_id), reply_markup=InlineKeyboardMarkup(keyboard))
 
     if await is_user_banned(user_id):
         reason = await get_ban_reason(user_id)
@@ -51,8 +46,7 @@ async def start_command(client: Client, message: Message):
         try:
             await add_user(user_id, first_name, username)
             await client.send_message(LOG_CHANNEL_ID, f"New User: {message.from_user.mention} ({user_id})")
-        except Exception as e:
-            logging.error(e)
+        except Exception as e: logging.error(e)
 
     if await is_maintenance(user_id):
         return await message.reply_text("🛠 Maintenance mode ON")
@@ -62,8 +56,7 @@ async def start_command(client: Client, message: Message):
             base64_string = text.split(" ", 1)[1]
             string = await decode(base64_string)
             argument = string.split("-")
-        except:
-            return
+        except: return
 
         ids = []
         try:
@@ -73,8 +66,7 @@ async def start_command(client: Client, message: Message):
                 ids = range(start, end + 1)
             elif len(argument) == 2:
                 ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-        except:
-            return
+        except: return
 
         temp = await message.reply_text("⏳ Processing...")
         messages = await get_messages(client, ids)
@@ -90,8 +82,7 @@ async def start_command(client: Client, message: Message):
                 await asyncio.sleep(e.value)
                 copied = await msg.copy(chat_id=user_id, caption=caption, parse_mode=ParseMode.HTML, protect_content=PROTECT_CONTENT)
                 copied_msgs.append(copied)
-            except:
-                pass
+            except: pass
 
         warn = await client.send_message(
             chat_id=user_id,
@@ -105,11 +96,7 @@ async def start_command(client: Client, message: Message):
     buttons = [[InlineKeyboardButton("🧠 HELP", callback_data="help"), InlineKeyboardButton("🔰 ABOUT", callback_data="about")]]
     if admin_status: buttons.append([InlineKeyboardButton("⚙️ SETTINGS", callback_data="settings")])
 
-    await message.reply_photo(
-        photo=START_PIC,
-        caption=START_MSG.format(first=first_name, last=last_name, username=username, mention=message.from_user.mention, id=user_id),
-        reply_markup=InlineKeyboardMarkup(buttons)
-    )
+    await message.reply_photo(photo=START_PIC, caption=START_MSG.format(first=first_name, last=last_name, username=username, mention=message.from_user.mention, id=user_id), reply_markup=InlineKeyboardMarkup(buttons))
 
 @Client.on_message(filters.command("users") & filters.private)
 async def total_users(client: Client, message: Message):
@@ -143,22 +130,14 @@ async def broadcast(client: Client, message: Message):
             try:
                 await message.reply_to_message.copy(user["_id"])
                 successful += 1
-            except:
-                unsuccessful += 1
+            except: unsuccessful += 1
         except Exception as e:
             error = str(e).lower()
             if "blocked" in error: blocked += 1
             elif "deactivated" in error or "deleted" in error: deleted += 1
             else: unsuccessful += 1
 
-    status = f"""
-<b>📢 Broadcast Completed</b>
-<b>Total Users:</b> <code>{total}</code>
-<b>Successful:</b> <code>{successful}</code>
-<b>Blocked Users:</b> <code>{blocked}</code>
-<b>Deleted Accounts:</b> <code>{deleted}</code>
-<b>Unsuccessful:</b> <code>{unsuccessful}</code>
-"""
+    status = f"<b>📢 Broadcast Completed</b>\n<b>Total Users:</b> <code>{total}</code>\n<b>Successful:</b> <code>{successful}</code>\n<b>Blocked Users:</b> <code>{blocked}</code>\n<b>Deleted Accounts:</b> <code>{deleted}</code>\n<b>Unsuccessful:</b> <code>{unsuccessful}</code>"
     await pls_wait.edit_text(status, parse_mode=ParseMode.HTML)
     await asyncio.sleep(15)
     try:
@@ -170,19 +149,12 @@ async def delete_files(messages, client, main_message, payload=None):
     if not AUTO_DELETE_ENABLED: return
     await asyncio.sleep(FILE_AUTO_DELETE)
     for msg in messages:
-        try:
-            await client.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
+        try: await client.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
         except: pass
 
     keyboard = None
     if payload: keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("♻️ Get File Again", url=f"https://t.me/{client.username}?start={payload}")]])
-
-    try:
-        await main_message.edit_text(
-            text="✅ <b>Your Video / File Has Been Deleted.</b>\n\n👇 Click the button below to get your file again.",
-            parse_mode=ParseMode.HTML,
-            reply_markup=keyboard
-        )
+    try: await main_message.edit_text(text="✅ <b>Your Video / File Has Been Deleted.</b>\n\n👇 Click the button below to get your file again.", parse_mode=ParseMode.HTML, reply_markup=keyboard)
     except: pass
 
 def set_auto_delete(state: bool):
@@ -191,17 +163,13 @@ def set_auto_delete(state: bool):
 
 @Client.on_message(filters.command("autodeleteon") & filters.private)
 async def enable_autodelete(client: Client, message: Message):
-    if not await is_admin(message.from_user.id):
-        return await message.reply_text("❌ Admins only.")
-        
+    if not await is_admin(message.from_user.id): return await message.reply_text("❌ Admins only.")
     set_auto_delete(True)
     await message.reply_text("✅ Auto delete ON")
 
 @Client.on_message(filters.command("autodeleteoff") & filters.private)
 async def disable_autodelete(client: Client, message: Message):
-    if not await is_admin(message.from_user.id):
-        return await message.reply_text("❌ Admins only.")
-        
+    if not await is_admin(message.from_user.id): return await message.reply_text("❌ Admins only.")
     set_auto_delete(False)
     await message.reply_text("✅ Auto delete OFF")
     
