@@ -14,10 +14,8 @@ logger = logging.getLogger(__name__)
 
 async def auto_delete(msg, delay=60):
     await asyncio.sleep(delay)
-    try:
-        await msg.delete()
-    except:
-        pass
+    try: await msg.delete()
+    except: pass
 
 async def safe_edit(message, text, buttons=None):
     try:
@@ -26,18 +24,15 @@ async def safe_edit(message, text, buttons=None):
     except MessageNotModified:
         pass
     except:
-        try:
-            await message.reply_text(text=text, reply_markup=buttons, disable_web_page_preview=True)
-        except:
-            pass
+        try: await message.reply_text(text=text, reply_markup=buttons, disable_web_page_preview=True)
+        except: pass
 
 async def get_input(client, message, prompt):
     new_text = f"{prompt}\n\nSend /cancel to stop."
     try:
         if message.text != new_text:
             await message.edit_text(new_text)
-    except MessageNotModified:
-        pass
+    except MessageNotModified: pass
 
     try:
         msg = await client.listen(message.chat.id, timeout=300)
@@ -59,11 +54,9 @@ async def subscribed(client, message) -> bool:
     if not message.from_user: return True
     user_id = message.from_user.id
     
-    if await is_admin(user_id) or await is_owner(user_id):
-        return True
+    if await is_admin(user_id) or await is_owner(user_id): return True
 
     channels = [FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4]
-
     for channel in channels:
         if not channel: continue
         try:
@@ -77,14 +70,11 @@ async def subscribed(client, message) -> bool:
             await asyncio.sleep(e.value)
             try:
                 member = await client.get_chat_member(chat_id, user_id)
-                if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
-                    return False
-            except:
-                return False
+                if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]: return False
+            except: return False
         except Exception as e:
             logger.error(f"Error checking force sub for channel {channel}: {e}")
             continue
-            
     return True
 
 async def encode(string: str) -> str:
@@ -105,8 +95,7 @@ async def get_messages(client, message_ids):
         except FloodWait as e:
             await asyncio.sleep(e.value)
             msgs = await client.get_messages(chat_id=client.db_channel.id, message_ids=batch)
-        except:
-            msgs = []
+        except: msgs = []
         messages.extend(msgs)
         total += len(batch)
     return messages
@@ -116,7 +105,6 @@ async def get_message_id(client, message):
         if message.forward_from_chat.id == client.db_channel.id:
             return message.forward_from_message_id
         return 0
-
     if message.forward_sender_name: return 0
     if message.text:
         pattern = r"https://t.me/(?:c/)?([^/]+)/(\d+)"
@@ -127,8 +115,7 @@ async def get_message_id(client, message):
         if chat.isdigit() or chat.startswith("c/"):
             if f"-100{chat.replace('c/', '')}" == str(client.db_channel.id):
                 return msg_id
-        elif client.db_channel.username and chat == client.db_channel.username:
-            return msg_id
+        elif client.db_channel.username and chat == client.db_channel.username: return msg_id
     return 0
 
 def get_readable_time(seconds: int) -> str:
