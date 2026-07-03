@@ -1,5 +1,6 @@
 import sys
-from datetime import datetime
+import asyncio
+from datetime import datetime, timedelta
 from aiohttp import web
 from plugins import web_server
 
@@ -15,6 +16,7 @@ from config import (
     FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4,
     CHANNEL_ID, PORT
 )
+from database.database import premium_collection, remove_premium
 
 class Bot(Client):
     def __init__(self):
@@ -28,14 +30,42 @@ class Bot(Client):
         )
         self.logger = LOGGER(__name__)
 
+    async def premium_expiry_task(self):
+        while True:
+            try:
+                now = datetime.now()
+                warning_time = now + timedelta(days=1)
+                
+                cursor = premium_collection.find({"is_premium": True})
+                async for user in cursor:
+                    user_id = user["_id"]
+                    expires_at = user.get("expires_at")
+                    if not expires_at: continue
+                    
+                    if now > expires_at:
+                        await remove_premium(user_id)
+                        try:
+                            await self.send_message(user_id, f"⚠️ <b>Your premium membership has ended.</b>\n\nIt officially closed on: {expires_at.strftime('%Y-%m-%d %H:%M:%S')}")
+                        except: pass
+                    elif warning_time > expires_at and not user.get("notified", False):
+                        try:
+                            await self.send_message(user_id, f"⚠️ <b>Reminder:</b> Your premium membership is closing soon!\n\n<b>Expiry Date:</b> {expires_at.strftime('%Y-%m-%d %H:%M:%S')}")
+                            await premium_collection.update_one({"_id": user_id}, {"$set": {"notified": True}})
+                        except: pass
+            except Exception as e:
+                self.logger.error(f"Premium check error: {e}")
+            await asyncio.sleep(3600) 
+
     async def start(self):
         await super().start()
         me = await self.get_me()
         self.uptime = datetime.now()
         self.username = me.username
+        
+        asyncio.create_task(self.premium_expiry_task())
+        self.logger.info("✅ Premium Expiry Monitor started.")
 
         self.invitelinks = {}
-
         async def get_invite(channel_id, key_name, label):
             if not channel_id:
                 self.invitelinks[key_name] = None
@@ -43,8 +73,7 @@ class Bot(Client):
             try:
                 chat = await self.get_chat(channel_id)
                 link = chat.invite_link
-                if not link:
-                    link = await self.export_chat_invite_link(channel_id)
+                if not link: link = await self.export_chat_invite_link(channel_id)
                 self.invitelinks[key_name] = link
                 self.logger.info(f"✅ Force Sub Link generated for {label} ({channel_id})")
             except Exception as e:
