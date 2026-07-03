@@ -19,6 +19,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
     admin_status = await is_admin(user_id)
     first_name = query.from_user.first_name or "User"
 
+    # --- MAIN MENU ---
     if data == "start":
         buttons = [[InlineKeyboardButton("🧠 Help", callback_data="help"), InlineKeyboardButton("🔰 About", callback_data="about")]]
         if admin_status: buttons.append([InlineKeyboardButton("⚙️ Settings", callback_data="settings")])
@@ -48,6 +49,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [InlineKeyboardButton("⚓ Home", callback_data="start"), InlineKeyboardButton("⚡ Close", callback_data="close")]
         ]))
 
+    # --- SETTINGS MENU ---
     elif data == "settings":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "⚙️ Admin Settings Panel", InlineKeyboardMarkup([
@@ -56,6 +58,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [InlineKeyboardButton("🔙 Back", callback_data="start")]
         ]))
 
+    # --- ADMIN MANAGEMENT ---
     elif data == "admin_menu":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "👨‍💻 Admin Management", InlineKeyboardMarkup([
@@ -65,15 +68,15 @@ async def cb_handler(client: Client, query: CallbackQuery):
         ]))
 
     # -------------------------------------------------------------------------
-    # ACTION EVENTS - NOW SENDING NEW PHOTOS ALONG WITH THE BACK BUTTON
+    # ACTION EVENTS - USING get_input WITH KEYBOARDS
     # -------------------------------------------------------------------------
 
     elif data == "add_admin":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        text = await get_input(client, query.message, "Send user_id to add as admin")
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Admin Menu", callback_data="admin_menu")]])
+        text = await get_input(client, query.message, "Send user_id to add as admin", keyboard)
         if not text: return 
         
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Admin Menu", callback_data="admin_menu")]])
         if not text.isdigit(): 
             return await query.message.reply_photo(photo=START_PIC, caption="❌ Invalid User ID", reply_markup=keyboard)
         
@@ -86,10 +89,10 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "remove_admin":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        text = await get_input(client, query.message, "Send user_id to remove from admin")
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Admin Menu", callback_data="admin_menu")]])
+        text = await get_input(client, query.message, "Send user_id to remove from admin", keyboard)
         if not text: return 
         
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Admin Menu", callback_data="admin_menu")]])
         if not text.isdigit(): 
             return await query.message.reply_photo(photo=START_PIC, caption="❌ Invalid User ID", reply_markup=keyboard)
         
@@ -117,10 +120,10 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "ban_user":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        text = await get_input(client, query.message, "Send user_id [reason]")
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Ban Menu", callback_data="ban_menu")]])
+        text = await get_input(client, query.message, "Send user_id [reason]", keyboard)
         if not text: return 
         
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Ban Menu", callback_data="ban_menu")]])
         parts = text.split(maxsplit=1)
         if not parts[0].isdigit(): 
             return await query.message.reply_photo(photo=START_PIC, caption="❌ Invalid User ID", reply_markup=keyboard)
@@ -132,10 +135,10 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "unban_user":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        text = await get_input(client, query.message, "Send user_id")
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Ban Menu", callback_data="ban_menu")]])
+        text = await get_input(client, query.message, "Send user_id", keyboard)
         if not text: return 
         
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Ban Menu", callback_data="ban_menu")]])
         if not text.isdigit(): 
             return await query.message.reply_photo(photo=START_PIC, caption="❌ Invalid User ID", reply_markup=keyboard)
         
@@ -161,10 +164,10 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "addpremiumuser":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        text = await get_input(client, query.message, "Send user_id and number of days (Space separated).\n\nExample: `123456789 30`")
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Premium Menu", callback_data="premium_menu")]])
+        text = await get_input(client, query.message, "Send user_id and number of days (Space separated).\n\nExample: `123456789 30`", keyboard)
         if not text: return 
         
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Premium Menu", callback_data="premium_menu")]])
         parts = text.split()
         if len(parts) != 2 or not parts[0].isdigit() or not parts[1].isdigit(): 
             return await query.message.reply_photo(photo=START_PIC, caption="❌ Invalid format. Use: `user_id days`", reply_markup=keyboard)
@@ -175,10 +178,10 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "removepremiumuser":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        text = await get_input(client, query.message, "Send user_id to revoke Premium access")
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Premium Menu", callback_data="premium_menu")]])
+        text = await get_input(client, query.message, "Send user_id to revoke Premium access", keyboard)
         if not text: return 
         
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Premium Menu", callback_data="premium_menu")]])
         if not text.isdigit(): 
             return await query.message.reply_photo(photo=START_PIC, caption="❌ Invalid User ID", reply_markup=keyboard)
         
