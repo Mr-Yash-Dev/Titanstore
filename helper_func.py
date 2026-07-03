@@ -7,7 +7,7 @@ from pyrogram import filters
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import UserNotParticipant, FloodWait, MessageNotModified
 
-from config import FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4
+from config import FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4, START_PIC
 from database.database import is_admin, is_owner
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,8 @@ async def safe_edit(message, text, buttons=None):
         try: await message.reply_text(text=text, reply_markup=buttons, disable_web_page_preview=True)
         except: pass
 
-async def get_input(client, message, prompt):
+# Updated to accept 'keyboard' and fallback safely
+async def get_input(client, message, prompt, keyboard=None):
     new_text = f"{prompt}\n\nSend /cancel to stop."
     try:
         # Keep the photo when asking for input!
@@ -46,18 +47,34 @@ async def get_input(client, message, prompt):
 
     try:
         msg = await client.listen(message.chat.id, timeout=300)
+        
+        # 1. Handle Invalid Input (e.g. sending a photo instead of text)
         if not msg.text:
-            m = await msg.reply("❌ Invalid input!")
-            asyncio.create_task(auto_delete(m))
+            if keyboard:
+                await message.reply_photo(photo=START_PIC, caption="❌ Invalid input!", reply_markup=keyboard)
+            else:
+                m = await msg.reply("❌ Invalid input!")
+                asyncio.create_task(auto_delete(m))
             return None
+            
+        # 2. Handle /cancel Command
         if msg.text.lower() == "/cancel":
-            m = await msg.reply("❌ Cancelled!")
-            asyncio.create_task(auto_delete(m))
+            if keyboard:
+                await message.reply_photo(photo=START_PIC, caption="❌ Cancelled!", reply_markup=keyboard)
+            else:
+                m = await msg.reply("❌ Cancelled!")
+                asyncio.create_task(auto_delete(m))
             return None
+            
         return msg.text
+        
+    # 3. Handle Timeout
     except asyncio.TimeoutError:
-        m = await message.reply("⌛ Timeout!")
-        asyncio.create_task(auto_delete(m))
+        if keyboard:
+            await message.reply_photo(photo=START_PIC, caption="⌛ Timeout!", reply_markup=keyboard)
+        else:
+            m = await message.reply("⌛ Timeout!")
+            asyncio.create_task(auto_delete(m))
         return None
 
 async def subscribed(client, message) -> bool:
