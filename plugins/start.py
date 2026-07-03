@@ -157,6 +157,7 @@ async def delete_files(messages, client, main_message, payload=None):
     try: await main_message.edit_text(text="✅ <b>Your Video / File Has Been Deleted.</b>\n\n👇 Click the button below to get your file again.", parse_mode=ParseMode.HTML, reply_markup=keyboard)
     except: pass
 
+# --- AUTO DELETE BACKGROUND LOGIC (USED BY BUTTONS) ---
 def set_auto_delete(state: bool):
     global AUTO_DELETE_ENABLED
     AUTO_DELETE_ENABLED = state
@@ -164,16 +165,4 @@ def set_auto_delete(state: bool):
 def get_auto_delete() -> bool:
     global AUTO_DELETE_ENABLED
     return AUTO_DELETE_ENABLED
-
-@Client.on_message(filters.command("autodeleteon") & filters.private)
-async def enable_autodelete(client: Client, message: Message):
-    if not await is_admin(message.from_user.id): return await message.reply_text("❌ Admins only.")
-    set_auto_delete(True)
-    await message.reply_text("✅ Auto delete ON")
-
-@Client.on_message(filters.command("autodeleteoff") & filters.private)
-async def disable_autodelete(client: Client, message: Message):
-    if not await is_admin(message.from_user.id): return await message.reply_text("❌ Admins only.")
-    set_auto_delete(False)
-    await message.reply_text("✅ Auto delete OFF")
     
