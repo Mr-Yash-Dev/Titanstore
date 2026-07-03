@@ -161,6 +161,10 @@ def set_auto_delete(state: bool):
     global AUTO_DELETE_ENABLED
     AUTO_DELETE_ENABLED = state
 
+def get_auto_delete() -> bool:
+    global AUTO_DELETE_ENABLED
+    return AUTO_DELETE_ENABLED
+
 @Client.on_message(filters.command("autodeleteon") & filters.private)
 async def enable_autodelete(client: Client, message: Message):
     if not await is_admin(message.from_user.id): return await message.reply_text("❌ Admins only.")
