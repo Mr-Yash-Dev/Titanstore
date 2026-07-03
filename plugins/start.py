@@ -189,13 +189,19 @@ def set_auto_delete(state: bool):
     global AUTO_DELETE_ENABLED
     AUTO_DELETE_ENABLED = state
 
-@Client.on_message(filters.command("autodeleteon") & filters.user(OWNER_ID))
+@Client.on_message(filters.command("autodeleteon") & filters.private)
 async def enable_autodelete(client: Client, message: Message):
+    if not await is_admin(message.from_user.id):
+        return await message.reply_text("❌ Admins only.")
+        
     set_auto_delete(True)
-    await message.reply_text("Auto delete ON")
+    await message.reply_text("✅ Auto delete ON")
 
-@Client.on_message(filters.command("autodeleteoff") & filters.user(OWNER_ID))
+@Client.on_message(filters.command("autodeleteoff") & filters.private)
 async def disable_autodelete(client: Client, message: Message):
+    if not await is_admin(message.from_user.id):
+        return await message.reply_text("❌ Admins only.")
+        
     set_auto_delete(False)
-    await message.reply_text("Auto delete OFF")
+    await message.reply_text("✅ Auto delete OFF")
     
