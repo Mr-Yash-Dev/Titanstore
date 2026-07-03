@@ -54,8 +54,45 @@ async def cb_handler(client: Client, query: CallbackQuery):
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "⚙️ Admin Settings Panel", InlineKeyboardMarkup([
             [InlineKeyboardButton("👨‍💻 Admin Menu", callback_data="admin_menu"), InlineKeyboardButton("🚫 Ban Menu", callback_data="ban_menu")],
-            [InlineKeyboardButton("💎 Premium Menu", callback_data="premium_menu")],
+            [InlineKeyboardButton("💎 Premium Menu", callback_data="premium_menu"), InlineKeyboardButton("🗑 Auto Delete", callback_data="autodelete_menu")],
             [InlineKeyboardButton("🔙 Back", callback_data="start")]
+        ]))
+
+    # --- AUTO DELETE MENU (NEW) ---
+    elif data == "autodelete_menu":
+        if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
+        from plugins.start import get_auto_delete
+        status = "ON ✅" if get_auto_delete() else "OFF ❌"
+        
+        return await safe_edit(query.message, f"🗑 **Auto Delete Management**\n\nCurrent Status: **{status}**", InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Enable", callback_data="autodelete_on"), InlineKeyboardButton("❌ Disable", callback_data="autodelete_off")],
+            [InlineKeyboardButton("🔙 Back", callback_data="settings")]
+        ]))
+
+    elif data == "autodelete_on":
+        if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
+        from plugins.start import set_auto_delete, get_auto_delete
+        if get_auto_delete():
+            return await query.answer("⚠️ Auto Delete is already ON!", show_alert=True)
+        
+        set_auto_delete(True)
+        await query.answer("✅ Auto Delete Enabled!", show_alert=True)
+        return await safe_edit(query.message, "🗑 **Auto Delete Management**\n\nCurrent Status: **ON ✅**", InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Enable", callback_data="autodelete_on"), InlineKeyboardButton("❌ Disable", callback_data="autodelete_off")],
+            [InlineKeyboardButton("🔙 Back", callback_data="settings")]
+        ]))
+
+    elif data == "autodelete_off":
+        if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
+        from plugins.start import set_auto_delete, get_auto_delete
+        if not get_auto_delete():
+            return await query.answer("⚠️ Auto Delete is already OFF!", show_alert=True)
+            
+        set_auto_delete(False)
+        await query.answer("❌ Auto Delete Disabled!", show_alert=True)
+        return await safe_edit(query.message, "🗑 **Auto Delete Management**\n\nCurrent Status: **OFF ❌**", InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Enable", callback_data="autodelete_on"), InlineKeyboardButton("❌ Disable", callback_data="autodelete_off")],
+            [InlineKeyboardButton("🔙 Back", callback_data="settings")]
         ]))
 
     # --- ADMIN MANAGEMENT ---
@@ -66,10 +103,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [InlineKeyboardButton("📋 Admin List", callback_data="admin_list")],
             [InlineKeyboardButton("🔙 Back", callback_data="settings")]
         ]))
-
-    # -------------------------------------------------------------------------
-    # ACTION EVENTS - USING get_input WITH KEYBOARDS
-    # -------------------------------------------------------------------------
 
     elif data == "add_admin":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
@@ -110,6 +143,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         text = "\n".join([f"• {a}" for a in admins])
         return await safe_edit(query.message, f"👨‍💻 Admin List:\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_menu")]]))
 
+    # --- BAN MANAGEMENT ---
     elif data == "ban_menu":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "🚫 Ban Management", InlineKeyboardMarkup([
@@ -153,6 +187,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         text = "\n".join([f"• {u['_id']} - {u.get('reason','No reason')}" for u in banned])
         return await safe_edit(query.message, f"🚫 Banned Users:\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="ban_menu")]]))
 
+    # --- PREMIUM MANAGEMENT ---
     elif data == "premium_menu":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "💎 Premium Management\n\nPremium users can generate file links.", InlineKeyboardMarkup([
