@@ -1,9 +1,7 @@
-
 import os
 import logging
 from logging.handlers import RotatingFileHandler
 
-# Helper function to securely fetch integers from env variables
 def get_env_int(env_key, default_value):
     val = os.environ.get(env_key)
     return int(val) if val else default_value
