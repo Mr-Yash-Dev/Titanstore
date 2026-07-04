@@ -2,11 +2,14 @@ import asyncio
 from pyrogram import filters, Client
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
-from config import *
+from config import (
+    START_MSG, HELP_TXT, COMMANDS_TXT, ABOUT_TXT, DISCLAIMER_TXT, 
+    OWNER_ID, START_PIC
+)
 from helper_func import safe_edit, get_input
-from database.database import (
+from database.Database import (
     is_admin, add_admin, remove_admin, get_admins, ban_user, unban_user, get_banned_users,
-    add_premium, remove_premium, premium_collection
+    add_premium, remove_premium, premium_collection, get_auto_delete_status, set_auto_delete_status
 )
 
 @Client.on_callback_query()
@@ -19,7 +22,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
     admin_status = await is_admin(user_id)
     first_name = query.from_user.first_name or "User"
 
-    # --- MAIN MENU ---
     if data == "start":
         buttons = [[InlineKeyboardButton("🧠 Help", callback_data="help"), InlineKeyboardButton("🔰 About", callback_data="about")]]
         if admin_status: buttons.append([InlineKeyboardButton("⚙️ Settings", callback_data="settings")])
@@ -49,7 +51,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [InlineKeyboardButton("⚓ Home", callback_data="start"), InlineKeyboardButton("⚡ Close", callback_data="close")]
         ]))
 
-    # --- SETTINGS MENU ---
     elif data == "settings":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "⚙️ Admin Settings Panel", InlineKeyboardMarkup([
@@ -58,11 +59,10 @@ async def cb_handler(client: Client, query: CallbackQuery):
             [InlineKeyboardButton("🔙 Back", callback_data="start")]
         ]))
 
-    # --- AUTO DELETE MENU (NEW) ---
     elif data == "autodelete_menu":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        from plugins.start import get_auto_delete
-        status = "ON ✅" if get_auto_delete() else "OFF ❌"
+        is_on = await get_auto_delete_status()
+        status = "ON ✅" if is_on else "OFF ❌"
         
         return await safe_edit(query.message, f"🗑 **Auto Delete Management**\n\nCurrent Status: **{status}**", InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Enable", callback_data="autodelete_on"), InlineKeyboardButton("❌ Disable", callback_data="autodelete_off")],
@@ -71,11 +71,10 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "autodelete_on":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        from plugins.start import set_auto_delete, get_auto_delete
-        if get_auto_delete():
+        if await get_auto_delete_status():
             return await query.answer("⚠️ Auto Delete is already ON!", show_alert=True)
         
-        set_auto_delete(True)
+        await set_auto_delete_status(True)
         await query.answer("✅ Auto Delete Enabled!", show_alert=True)
         return await safe_edit(query.message, "🗑 **Auto Delete Management**\n\nCurrent Status: **ON ✅**", InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Enable", callback_data="autodelete_on"), InlineKeyboardButton("❌ Disable", callback_data="autodelete_off")],
@@ -84,18 +83,16 @@ async def cb_handler(client: Client, query: CallbackQuery):
 
     elif data == "autodelete_off":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
-        from plugins.start import set_auto_delete, get_auto_delete
-        if not get_auto_delete():
+        if not await get_auto_delete_status():
             return await query.answer("⚠️ Auto Delete is already OFF!", show_alert=True)
             
-        set_auto_delete(False)
+        await set_auto_delete_status(False)
         await query.answer("❌ Auto Delete Disabled!", show_alert=True)
         return await safe_edit(query.message, "🗑 **Auto Delete Management**\n\nCurrent Status: **OFF ❌**", InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Enable", callback_data="autodelete_on"), InlineKeyboardButton("❌ Disable", callback_data="autodelete_off")],
             [InlineKeyboardButton("🔙 Back", callback_data="settings")]
         ]))
 
-    # --- ADMIN MANAGEMENT ---
     elif data == "admin_menu":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "👨‍💻 Admin Management", InlineKeyboardMarkup([
@@ -143,7 +140,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
         text = "\n".join([f"• {a}" for a in admins])
         return await safe_edit(query.message, f"👨‍💻 Admin List:\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_menu")]]))
 
-    # --- BAN MANAGEMENT ---
     elif data == "ban_menu":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "🚫 Ban Management", InlineKeyboardMarkup([
@@ -187,7 +183,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
         text = "\n".join([f"• {u['_id']} - {u.get('reason','No reason')}" for u in banned])
         return await safe_edit(query.message, f"🚫 Banned Users:\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="ban_menu")]]))
 
-    # --- PREMIUM MANAGEMENT ---
     elif data == "premium_menu":
         if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
         return await safe_edit(query.message, "💎 Premium Management\n\nPremium users can generate file links.", InlineKeyboardMarkup([
@@ -235,7 +230,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         text = ""
         for u in users:
             exp = u.get("expires_at")
-            exp_str = exp.strftime('%Y-%m-%d') if exp else "Never"
+            exp_str = exp.strftime('%Y-%m-%d UTC') if exp else "Never"
             text += f"• <code>{u['_id']}</code> (Expires: {exp_str})\n"
             
         return await safe_edit(query.message, f"💎 Premium Users:\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="premium_menu")]]))
