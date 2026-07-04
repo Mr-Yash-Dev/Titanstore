@@ -12,7 +12,7 @@ from config import (
     START_PIC, START_MSG
 )
 from helper_func import subscribed, decode, get_messages
-from database.Database import (
+from database.database import (
     is_user_present, add_user, is_user_banned, 
     get_ban_reason, is_maintenance, is_admin, user_data, get_auto_delete_status
 )
