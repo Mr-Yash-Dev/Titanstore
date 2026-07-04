@@ -1,5 +1,5 @@
 import motor.motor_asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from config import DB_URI, DB_NAME, OWNER_ID
 
 dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
@@ -9,8 +9,8 @@ user_data = database["users"]
 banned_users = database["banned_users"]
 admins_collection = database["admins"]
 maintenance_collection = database["maintenance"]
-telegram_files = database["telegram_files"]
 premium_collection = database["premium_users"]
+settings_collection = database["settings"]
 
 # -------------------------------
 # USER MANAGEMENT
@@ -21,7 +21,7 @@ async def is_user_present(user_id: int) -> bool:
 async def add_user(user_id: int, first_name=None, username=None):
     await user_data.update_one(
         {"_id": user_id},
-        {"$set": {"first_name": first_name, "username": username, "joined_at": datetime.now()}},
+        {"$set": {"first_name": first_name, "username": username, "joined_at": datetime.now(timezone.utc)}},
         upsert=True
     )
 
@@ -80,7 +80,7 @@ async def is_admin(user_id: int) -> bool:
 # PREMIUM SYSTEM
 # -------------------------------
 async def add_premium(user_id: int, days: int):
-    expires_at = datetime.now() + timedelta(days=days)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=days)
     await premium_collection.update_one(
         {"_id": user_id}, 
         {"$set": {"is_premium": True, "expires_at": expires_at, "notified": False}}, 
@@ -96,12 +96,12 @@ async def get_premium_users():
     return [user["_id"] for user in users]
 
 async def is_premium(user_id: int) -> bool:
-    if await is_admin(user_id): return True # Admins/Owners inherently get premium rights
+    if await is_admin(user_id): return True
     
     data = await premium_collection.find_one({"_id": user_id})
     if data and data.get("is_premium"):
         expires_at = data.get("expires_at")
-        if expires_at and datetime.now() > expires_at:
+        if expires_at and datetime.now(timezone.utc) > expires_at.replace(tzinfo=timezone.utc):
             await remove_premium(user_id)
             return False
         return True
@@ -111,7 +111,21 @@ async def is_premium(user_id: int) -> bool:
 # MAINTENANCE SYSTEM
 # -------------------------------
 async def is_maintenance(user_id: int) -> bool:
-    if user_id == OWNER_ID: return False
+    if await is_admin(user_id): return False
     data = await maintenance_collection.find_one({"_id": "maintenance"})
     return data is not None and data.get("maintenance") == "on"
+
+# -------------------------------
+# SETTINGS (AUTO-DELETE)
+# -------------------------------
+async def get_auto_delete_status() -> bool:
+    data = await settings_collection.find_one({"_id": "auto_delete"})
+    return data.get("status", True) if data else True
+
+async def set_auto_delete_status(status: bool):
+    await settings_collection.update_one(
+        {"_id": "auto_delete"}, 
+        {"$set": {"status": status}}, 
+        upsert=True
+    )
     
