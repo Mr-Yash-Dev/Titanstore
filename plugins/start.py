@@ -1,23 +1,24 @@
 import asyncio
 import logging
 import humanize
-from datetime import datetime
 
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait
 
-from config import *
-from helper_func import subscribed, encode, decode, get_messages
-from database.database import (
+from config import (
+    FORCE_PIC, FORCE_MSG, LOG_CHANNEL_ID, PROTECT_CONTENT, FILE_AUTO_DELETE, 
+    START_PIC, START_MSG
+)
+from helper_func import subscribed, decode, get_messages
+from database.Database import (
     is_user_present, add_user, is_user_banned, 
-    get_ban_reason, is_maintenance, is_admin, user_data
+    get_ban_reason, is_maintenance, is_admin, user_data, get_auto_delete_status
 )
 
 logging.basicConfig(level=logging.INFO)
-AUTO_DELETE_ENABLED = True
-file_auto_delete = humanize.naturaldelta(FILE_AUTO_DELETE)
+file_auto_delete_text = humanize.naturaldelta(FILE_AUTO_DELETE)
 
 @Client.on_message(filters.command("start") & filters.private)
 async def start_command(client: Client, message: Message):
@@ -86,7 +87,7 @@ async def start_command(client: Client, message: Message):
 
         warn = await client.send_message(
             chat_id=user_id,
-            text=(f"<b>❗️ <u>IMPORTANT</u> ❗️</b>\n\nThis Video / File Will Be Deleted In <b>{file_auto_delete}</b> (Due To Copyright Issues).\n\n📌 Please Forward This Video / File To Somewhere Else And Start Downloading There."),
+            text=(f"<b>❗️ <u>IMPORTANT</u> ❗️</b>\n\nThis Video / File Will Be Deleted In <b>{file_auto_delete_text}</b> (Due To Copyright Issues).\n\n📌 Please Forward This Video / File To Somewhere Else And Start Downloading There."),
             parse_mode=ParseMode.HTML
         )
         asyncio.create_task(delete_files(copied_msgs, client, warn, base64_string))
@@ -146,7 +147,8 @@ async def broadcast(client: Client, message: Message):
     except: pass
 
 async def delete_files(messages, client, main_message, payload=None):
-    if not AUTO_DELETE_ENABLED: return
+    if not await get_auto_delete_status(): return
+    
     await asyncio.sleep(FILE_AUTO_DELETE)
     for msg in messages:
         try: await client.delete_messages(chat_id=msg.chat.id, message_ids=msg.id)
@@ -156,13 +158,4 @@ async def delete_files(messages, client, main_message, payload=None):
     if payload: keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("♻️ Get File Again", url=f"https://t.me/{client.username}?start={payload}")]])
     try: await main_message.edit_text(text="✅ <b>Your Video / File Has Been Deleted.</b>\n\n👇 Click the button below to get your file again.", parse_mode=ParseMode.HTML, reply_markup=keyboard)
     except: pass
-
-# --- AUTO DELETE BACKGROUND LOGIC (USED BY BUTTONS) ---
-def set_auto_delete(state: bool):
-    global AUTO_DELETE_ENABLED
-    AUTO_DELETE_ENABLED = state
-
-def get_auto_delete() -> bool:
-    global AUTO_DELETE_ENABLED
-    return AUTO_DELETE_ENABLED
-    
+        
