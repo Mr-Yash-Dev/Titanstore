@@ -8,7 +8,7 @@ from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import UserNotParticipant, FloodWait, MessageNotModified
 
 from config import FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4, START_PIC
-from database.database import is_admin, is_owner
+from database.Database import is_admin, is_owner
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,6 @@ async def auto_delete(msg, delay=60):
 
 async def safe_edit(message, text, buttons=None):
     try:
-        # Check if the message has a photo/media. If it does, edit the caption instead of text!
         if message.photo or message.video or message.document:
             if message.caption != text:
                 await message.edit_caption(caption=text, reply_markup=buttons)
@@ -32,11 +31,9 @@ async def safe_edit(message, text, buttons=None):
         try: await message.reply_text(text=text, reply_markup=buttons, disable_web_page_preview=True)
         except: pass
 
-# Updated to accept 'keyboard' and fallback safely
 async def get_input(client, message, prompt, keyboard=None):
     new_text = f"{prompt}\n\nSend /cancel to stop."
     try:
-        # Keep the photo when asking for input!
         if message.photo or message.video or message.document:
             await message.edit_caption(caption=new_text)
         else:
@@ -48,7 +45,6 @@ async def get_input(client, message, prompt, keyboard=None):
     try:
         msg = await client.listen(message.chat.id, timeout=300)
         
-        # 1. Handle Invalid Input (e.g. sending a photo instead of text)
         if not msg.text:
             if keyboard:
                 await message.reply_photo(photo=START_PIC, caption="❌ Invalid input!", reply_markup=keyboard)
@@ -57,7 +53,6 @@ async def get_input(client, message, prompt, keyboard=None):
                 asyncio.create_task(auto_delete(m))
             return None
             
-        # 2. Handle /cancel Command
         if msg.text.lower() == "/cancel":
             if keyboard:
                 await message.reply_photo(photo=START_PIC, caption="❌ Cancelled!", reply_markup=keyboard)
@@ -68,7 +63,6 @@ async def get_input(client, message, prompt, keyboard=None):
             
         return msg.text
         
-    # 3. Handle Timeout
     except asyncio.TimeoutError:
         if keyboard:
             await message.reply_photo(photo=START_PIC, caption="⌛ Timeout!", reply_markup=keyboard)
@@ -139,9 +133,9 @@ async def get_message_id(client, message):
         if not match: return 0
         chat, msg_id = match.group(1), int(match.group(2))
         
-        if chat.isdigit() or chat.startswith("c/"):
-            if f"-100{chat.replace('c/', '')}" == str(client.db_channel.id):
-                return msg_id
+        # Regex (?:c/)? already consumed the c/ if present, so chat is just the ID/username
+        if f"-100{chat}" == str(client.db_channel.id) or chat == str(client.db_channel.id):
+            return msg_id
         elif client.db_channel.username and chat == client.db_channel.username: return msg_id
     return 0
 
