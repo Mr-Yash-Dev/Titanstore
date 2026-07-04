@@ -1,9 +1,10 @@
+import urllib.parse
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyromod.exceptions import ListenerTimeout
 
 from helper_func import encode, get_message_id
-from database.database import is_premium
+from database.Database import is_premium
 
 @Client.on_message(filters.private & filters.command('batch'))
 async def batch(client: Client, message: Message):
@@ -32,7 +33,9 @@ async def batch(client: Client, message: Message):
     string = f"get-{f_msg_id * abs(client.db_channel.id)}-{s_msg_id * abs(client.db_channel.id)}"
     base64_string = await encode(string)
     link = f"https://t.me/{client.username}?start={base64_string}"
-    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f"https://telegram.me/share/url?url={link}")]])
+    
+    share_url = urllib.parse.quote(link)
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f"https://telegram.me/share/url?url={share_url}")]])
     await second_message.reply_text(f"<b>Here is your batch link:</b>\n\n{link}", reply_markup=keyboard)
 
 @Client.on_message(filters.private & filters.command('genlink'))
@@ -50,6 +53,8 @@ async def link_generator(client: Client, message: Message):
 
     base64_string = await encode(f"get-{msg_id * abs(client.db_channel.id)}")
     link = f"https://t.me/{client.username}?start={base64_string}"
-    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f"https://telegram.me/share/url?url={link}")]])
+    
+    share_url = urllib.parse.quote(link)
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f"https://telegram.me/share/url?url={share_url}")]])
     await channel_message.reply_text(f"<b>Here is your link:</b>\n\n{link}", reply_markup=keyboard)
     
