@@ -8,7 +8,7 @@ from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import UserNotParticipant, FloodWait, MessageNotModified
 
 from config import FORCE_SUB_CHANNEL_1, FORCE_SUB_CHANNEL_2, FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4, START_PIC
-from database.Database import is_admin, is_owner
+from database.database import is_admin, is_owner
 
 logger = logging.getLogger(__name__)
 
