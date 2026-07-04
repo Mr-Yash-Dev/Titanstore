@@ -18,7 +18,7 @@ from config import (
     FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4,
     CHANNEL_ID, PORT
 )
-from database.Database import premium_collection, remove_premium
+from database.database import premium_collection, remove_premium
 
 class Bot(Client):
     def __init__(self):
