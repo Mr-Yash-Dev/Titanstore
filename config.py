@@ -4,9 +4,14 @@ from logging.handlers import RotatingFileHandler
 
 def get_env_int(env_key, default_value):
     val = os.environ.get(env_key)
-    return int(val) if val else default_value
+    if val:
+        try:
+            return int(val)
+        except ValueError:
+            return default_value
+    return default_value
 
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8563450536:AAHmEumUch_2hXvU2lrRz8PXrwDAJWPCjE8")
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8563450536:AAFbBORM33E4RLbwCa7HnRYF9P-jKhdWHUk")
 APP_ID = get_env_int("APP_ID", 12293838)
 API_HASH = os.environ.get("API_HASH", "cf8c7db0d609148786e7ca5c706909bd")
 
