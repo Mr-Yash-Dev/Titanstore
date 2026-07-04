@@ -46,7 +46,19 @@ async def start_command(client: Client, message: Message):
     if not await is_user_present(user_id):
         try:
             await add_user(user_id, first_name, username)
-            await client.send_message(LOG_CHANNEL_ID, f"New User: {message.from_user.mention} ({user_id})")
+            
+            # --- YOUR CUSTOM NEW USER LOG MESSAGE ---
+            NEW_USER_TXT = """#New_User {}
+
+≈ ɪᴅ:- <code>{}</code>
+≈ ɴᴀᴍᴇ:- {}"""
+
+            await client.send_message(
+                LOG_CHANNEL_ID, 
+                NEW_USER_TXT.format(message.from_user.mention, user_id, first_name)
+            )
+            # -----------------------------------------
+            
         except Exception as e: logging.error(e)
 
     if await is_maintenance(user_id):
