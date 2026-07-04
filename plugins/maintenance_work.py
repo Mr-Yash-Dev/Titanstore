@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-from database.database import maintenance_collection, is_admin
+from database.Database import maintenance_collection, is_admin
 
 @Client.on_message(filters.command("maintenance") & filters.private)
 async def maintenance_toggle_command(client: Client, message: Message):
