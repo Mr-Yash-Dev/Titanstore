@@ -7,7 +7,7 @@ from config import (
     OWNER_ID, START_PIC
 )
 from helper_func import safe_edit, get_input
-from database.Database import (
+from database.database import (
     is_admin, add_admin, remove_admin, get_admins, ban_user, unban_user, get_banned_users,
     add_premium, remove_premium, premium_collection, get_auto_delete_status, set_auto_delete_status
 )
