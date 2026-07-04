@@ -6,7 +6,7 @@ from pyrogram.errors import FloodWait
 
 from config import CHANNEL_ID, DISABLE_CHANNEL_BUTTON, USER_REPLY_TEXT
 from helper_func import encode
-from database.Database import is_premium
+from database.database import is_premium
 
 IGNORE_CMDS = [
     'start','users','broadcast','batch','genlink','stats','joinchannels','pypi',
