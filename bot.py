@@ -1,6 +1,6 @@
 import sys
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from aiohttp import web
 from plugins import web_server
 
@@ -8,6 +8,8 @@ import pyromod.listen
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 import pyrogram.utils
+from pyrogram.errors import FloodWait, UserIsBlocked, UserDeactivated
+
 pyrogram.utils.MIN_CHANNEL_ID = -1009999999999
 
 from config import (
@@ -16,7 +18,7 @@ from config import (
     FORCE_SUB_CHANNEL_3, FORCE_SUB_CHANNEL_4,
     CHANNEL_ID, PORT
 )
-from database.database import premium_collection, remove_premium
+from database.Database import premium_collection, remove_premium
 
 class Bot(Client):
     def __init__(self):
@@ -33,7 +35,7 @@ class Bot(Client):
     async def premium_expiry_task(self):
         while True:
             try:
-                now = datetime.now()
+                now = datetime.now(timezone.utc)
                 warning_time = now + timedelta(days=1)
                 
                 cursor = premium_collection.find({"is_premium": True})
@@ -42,16 +44,20 @@ class Bot(Client):
                     expires_at = user.get("expires_at")
                     if not expires_at: continue
                     
+                    expires_at = expires_at.replace(tzinfo=timezone.utc)
+                    
                     if now > expires_at:
                         await remove_premium(user_id)
                         try:
-                            await self.send_message(user_id, f"⚠️ <b>Your premium membership has ended.</b>\n\nIt officially closed on: {expires_at.strftime('%Y-%m-%d %H:%M:%S')}")
-                        except: pass
+                            await self.send_message(user_id, f"⚠️ <b>Your premium membership has ended.</b>\n\nIt officially closed on: {expires_at.strftime('%Y-%m-%d %H:%M:%S')} UTC")
+                        except (UserIsBlocked, UserDeactivated): pass
+                        except Exception as e: self.logger.error(f"Expiry notify error for {user_id}: {e}")
                     elif warning_time > expires_at and not user.get("notified", False):
                         try:
-                            await self.send_message(user_id, f"⚠️ <b>Reminder:</b> Your premium membership is closing soon!\n\n<b>Expiry Date:</b> {expires_at.strftime('%Y-%m-%d %H:%M:%S')}")
+                            await self.send_message(user_id, f"⚠️ <b>Reminder:</b> Your premium membership is closing soon!\n\n<b>Expiry Date:</b> {expires_at.strftime('%Y-%m-%d %H:%M:%S')} UTC")
                             await premium_collection.update_one({"_id": user_id}, {"$set": {"notified": True}})
-                        except: pass
+                        except (UserIsBlocked, UserDeactivated): pass
+                        except Exception as e: self.logger.error(f"Warning notify error for {user_id}: {e}")
             except Exception as e:
                 self.logger.error(f"Premium check error: {e}")
             await asyncio.sleep(3600) 
@@ -59,7 +65,7 @@ class Bot(Client):
     async def start(self):
         await super().start()
         me = await self.get_me()
-        self.uptime = datetime.now()
+        self.uptime = datetime.now(timezone.utc)
         self.username = me.username
         
         asyncio.create_task(self.premium_expiry_task())
