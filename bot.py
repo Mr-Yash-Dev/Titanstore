@@ -12,7 +12,7 @@ pyrogram.utils.MIN_CHANNEL_ID = -1009999999999
 
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, CHANNEL_ID, PORT
 from database.database import premium_collection, remove_premium
-from route import routes
+from plugins.route import routes
 
 class Bot(Client):
     def __init__(self):
