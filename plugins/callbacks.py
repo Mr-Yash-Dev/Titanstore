@@ -2,13 +2,18 @@ from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from config import START_MSG, HELP_TXT, COMMANDS_TXT, ABOUT_TXT, DISCLAIMER_TXT, OWNER_ID
 from helper_func import safe_edit
-from database.database import is_admin
+from database.database import is_admin, is_maintenance
 
 @Client.on_callback_query(filters.regex("^(start|help|commands|about|disclaimer|close)$"))
 async def generic_cb_handler(client: Client, query: CallbackQuery):
+    user_id = query.from_user.id
+    
+    # Freeze buttons for normal users during maintenance
+    if await is_maintenance(user_id):
+        return await query.answer("🛠 Maintenance mode ON. Normal operations are temporarily paused.", show_alert=True)
+        
     await query.answer()
     data = query.data
-    user_id = query.from_user.id
     admin_status = await is_admin(user_id)
     first_name = query.from_user.first_name or "User"
 
