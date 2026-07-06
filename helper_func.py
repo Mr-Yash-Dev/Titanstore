@@ -41,26 +41,20 @@ async def get_input(client, message, prompt, keyboard=None):
         msg = await client.listen(message.chat.id, timeout=300)
         
         if not msg.text:
-            if keyboard:
-                await message.reply_photo(photo=START_PIC, caption="❌ Invalid input!", reply_markup=keyboard)
-            else:
-                m = await msg.reply("❌ Invalid input!")
+            if keyboard: await message.reply_photo(photo=START_PIC, caption="❌ Invalid input!", reply_markup=keyboard)
+            else: await msg.reply("❌ Invalid input!")
             return None
             
         if msg.text.lower() == "/cancel":
-            if keyboard:
-                await message.reply_photo(photo=START_PIC, caption="❌ Cancelled!", reply_markup=keyboard)
-            else:
-                m = await msg.reply("❌ Cancelled!")
+            if keyboard: await message.reply_photo(photo=START_PIC, caption="❌ Cancelled!", reply_markup=keyboard)
+            else: await msg.reply("❌ Cancelled!")
             return None
             
         return msg.text
         
     except asyncio.TimeoutError:
-        if keyboard:
-            await message.reply_photo(photo=START_PIC, caption="⌛ Timeout!", reply_markup=keyboard)
-        else:
-            m = await message.reply("⌛ Timeout!")
+        if keyboard: await message.reply_photo(photo=START_PIC, caption="⌛ Timeout!", reply_markup=keyboard)
+        else: await message.reply("⌛ Timeout!")
         return None
 
 async def subscribed(client, message) -> bool:
