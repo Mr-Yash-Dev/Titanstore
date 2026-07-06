@@ -7,6 +7,6 @@ async def root_route_handler(request):
     return web.json_response({
         "status": "ok",
         "bot": "TitanXBots",
-        "message": "Server is running smoothly"
+        "message": "Web Server running for Port binding."
     })
     
