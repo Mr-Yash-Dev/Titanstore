@@ -10,18 +10,18 @@ def get_env_list(env_key):
     val = os.environ.get(env_key, "")
     return [int(i) for i in val.split() if i.strip().isdigit()]
 
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
-APP_ID = get_env_int("APP_ID", 0)
-API_HASH = os.environ.get("API_HASH", "")
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8879094453:AAF3akfIR6UO9eMxriVnlKq8LbK2a6TkQ3s")
+APP_ID = get_env_int("APP_ID", 12293838)
+API_HASH = os.environ.get("API_HASH", "cf8c7db0d609148786e7ca5c706909bd")
 
-CHANNEL_ID = get_env_int("CHANNEL_ID", 0)
-LOG_CHANNEL_ID = get_env_int("LOG_CHANNEL_ID", 0)
-OWNER_ID = get_env_int("OWNER_ID", 0)
+CHANNEL_ID = get_env_int("CHANNEL_ID", -1002096962621)
+LOG_CHANNEL_ID = get_env_int("LOG_CHANNEL_ID", -1002313688533)
+OWNER_ID = get_env_int("OWNER_ID", 5356695781)
 PORT = get_env_int("PORT", 8080)
 TG_BOT_WORKERS = get_env_int("TG_BOT_WORKERS", 4)
-ADMINS = get_env_list("ADMINS") # Space separated Admin IDs in environment
+ADMINS = get_env_list("ADMINS", 5356695781) # Space separated Admin IDs in environment
 
-DB_URI = os.environ.get("DATABASE_URL", "")
+DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://TITANBOTS:TITANBOTS@cluster0.yagdfyt.mongodb.net/?appName=Cluster0")
 DB_NAME = os.environ.get("DATABASE_NAME", "TitanBot")
 
 START_PIC = os.environ.get("START_PIC", "https://envs.sh/WeX.jpg")
