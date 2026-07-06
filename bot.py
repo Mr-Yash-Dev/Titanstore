@@ -2,7 +2,7 @@ import sys
 import asyncio
 from datetime import datetime, timedelta, timezone
 from aiohttp import web
-from plugins.web_server import web_server
+from plugins import web_server
 import pyromod.listen
 from pyrogram import Client
 from pyrogram.enums import ParseMode
