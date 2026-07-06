@@ -8,12 +8,12 @@ from database.database import is_premium
 
 @Client.on_message(filters.private & filters.command('batch'))
 async def batch(client: Client, message: Message):
-    user_id = message.from_user.id
-    if not await is_premium(user_id): return
+    if not await is_premium(message.from_user.id): 
+        return await message.reply_text("⚠️ **Access Denied:** Only Admins and Premium Members can generate batch links.")
 
     while True:
         try:
-            first_message = await client.ask(chat_id=user_id, text="Forward FIRST message from DB channel\nor send DB post link", filters=(filters.forwarded | filters.text), timeout=60)
+            first_message = await client.ask(chat_id=message.from_user.id, text="Forward FIRST message from DB channel\nor send DB post link", filters=(filters.forwarded | filters.text), timeout=60)
         except ListenerTimeout: return
         f_msg_id = await get_message_id(client, first_message)
         if f_msg_id: break
@@ -21,7 +21,7 @@ async def batch(client: Client, message: Message):
 
     while True:
         try:
-            second_message = await client.ask(chat_id=user_id, text="Forward LAST message from DB channel\nor send DB post link", filters=(filters.forwarded | filters.text), timeout=60)
+            second_message = await client.ask(chat_id=message.from_user.id, text="Forward LAST message from DB channel\nor send DB post link", filters=(filters.forwarded | filters.text), timeout=60)
         except ListenerTimeout: return
         s_msg_id = await get_message_id(client, second_message)
         if s_msg_id: break
@@ -40,12 +40,12 @@ async def batch(client: Client, message: Message):
 
 @Client.on_message(filters.private & filters.command('genlink'))
 async def link_generator(client: Client, message: Message):
-    user_id = message.from_user.id
-    if not await is_premium(user_id): return
+    if not await is_premium(message.from_user.id): 
+        return await message.reply_text("⚠️ **Access Denied:** Only Admins and Premium Members can generate links.")
 
     while True:
         try:
-            channel_message = await client.ask(chat_id=user_id, text="Forward message from DB channel\nor send DB post link", filters=(filters.forwarded | filters.text), timeout=60)
+            channel_message = await client.ask(chat_id=message.from_user.id, text="Forward message from DB channel\nor send DB post link", filters=(filters.forwarded | filters.text), timeout=60)
         except ListenerTimeout: return
         msg_id = await get_message_id(client, channel_message)
         if msg_id: break
