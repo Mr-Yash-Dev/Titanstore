@@ -9,22 +9,22 @@ def get_env_int(env_key, default_value):
         except ValueError: return default_value
     return default_value
 
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
-APP_ID = get_env_int("APP_ID", 12345)
-API_HASH = os.environ.get("API_HASH", "")
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8879094453:AAF3akfIR6UO9eMxriVnlKq8LbK2a6TkQ3s")
+APP_ID = get_env_int("APP_ID", 12293838)
+API_HASH = os.environ.get("API_HASH", "cf8c7db0d609148786e7ca5c706909bd")
 
-CHANNEL_ID = get_env_int("CHANNEL_ID", -100)
-LOG_CHANNEL_ID = get_env_int("LOG_CHANNEL_ID", -100)
-OWNER_ID = get_env_int("OWNER_ID", 12345)
+CHANNEL_ID = get_env_int("CHANNEL_ID", -1002096962621)
+LOG_CHANNEL_ID = get_env_int("LOG_CHANNEL_ID", -1002313688533)
+OWNER_ID = get_env_int("OWNER_ID", 5356695781)
 
 # Dual Admin System
-ADMINS = [int(x) for x in os.environ.get("ADMINS", "").split()]
+ADMINS = [int(x) for x in os.environ.get("ADMINS", "5356695781").split()]
 if OWNER_ID not in ADMINS:
     ADMINS.append(OWNER_ID)
 
 PORT = get_env_int("PORT", 8080)
 
-DB_URI = os.environ.get("DATABASE_URL", "")
+DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://TITANBOTS:TITANBOTS@cluster0.yagdfyt.mongodb.net/?appName=Cluster0")
 DB_NAME = os.environ.get("DATABASE_NAME", "TitanBot")
 TG_BOT_WORKERS = get_env_int("TG_BOT_WORKERS", 4)
 
