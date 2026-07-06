@@ -59,7 +59,7 @@ async def get_admins():
     admins = await cursor.to_list(length=None)
     return [admin["_id"] for admin in admins]
 
-async def is_owner(user_id: int) -> bool:
+async def is_owner(user_id) -> bool:
     try:
         return int(user_id) == int(OWNER_ID)
     except (ValueError, TypeError):
@@ -70,7 +70,6 @@ async def is_admin(user_id) -> bool:
         uid = int(user_id)
         if uid == int(OWNER_ID) or uid in ADMINS: 
             return True
-            
         data = await admins_collection.find_one({"_id": uid})
         return data is not None and data.get("is_admin", False)
     except (ValueError, TypeError):
@@ -92,9 +91,8 @@ async def get_premium_users():
     users = await cursor.to_list(length=None)
     return [user["_id"] for user in users]
 
-async def is_premium(user_id: int) -> bool:
+async def is_premium(user_id) -> bool:
     if await is_admin(user_id): return True
-    
     try:
         uid = int(user_id)
         data = await premium_collection.find_one({"_id": uid})
