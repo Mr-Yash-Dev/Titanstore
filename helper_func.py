@@ -18,20 +18,26 @@ async def auto_delete(msg, delay=60):
 async def safe_edit(message, text, buttons=None):
     try:
         if message.photo or message.video or message.document:
-            if message.caption != text: await message.edit_caption(caption=text, reply_markup=buttons)
+            if message.caption != text: 
+                await message.edit_caption(caption=text, reply_markup=buttons)
         else:
-            if message.text != text: await message.edit_text(text=text, reply_markup=buttons, disable_web_page_preview=True)
-    except MessageNotModified: pass
-    except Exception:
-        try: await message.reply_text(text=text, reply_markup=buttons, disable_web_page_preview=True)
+            if message.text != text: 
+                await message.edit_text(text=text, reply_markup=buttons)
+    except MessageNotModified: 
+        pass
+    except Exception as e:
+        logger.error(f"Safe edit failed: {e}")
+        try: await message.reply_text(text=text, reply_markup=buttons)
         except: pass
 
 async def get_input(client, message, prompt, keyboard=None):
     new_text = f"{prompt}\n\nSend /cancel to stop."
     try:
-        if message.photo or message.video or message.document: await message.edit_caption(caption=new_text)
+        if message.photo or message.video or message.document: 
+            await message.edit_caption(caption=new_text)
         else:
-            if message.text != new_text: await message.edit_text(new_text)
+            if message.text != new_text: 
+                await message.edit_text(new_text)
     except MessageNotModified: pass
     except Exception: pass
 
