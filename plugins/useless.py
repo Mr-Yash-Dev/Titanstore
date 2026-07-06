@@ -1,56 +1,35 @@
 from datetime import datetime, timezone
 from pyrogram import filters, Client
 from pyrogram.types import Message
-from pyrogram.enums import ParseMode
-
+from config import BOT_STATS_TEXT, ADMINS
 from helper_func import get_readable_time
 from database.database import (
-    is_admin, get_total_users, get_total_banned, get_total_admins, 
-    get_total_premium, get_settings, get_fsub_channels
+    is_admin, user_data, admins_collection, banned_users, premium_collection, 
+    fsub_collection, get_fsub_status, get_auto_delete, get_protect_status
 )
 
 @Client.on_message(filters.command("stats") & filters.private)
-async def stats_command(client: Client, message: Message):
-    if not await is_admin(message.from_user.id):
-        return await message.reply("⚠️ You do not have permission to view stats.")
+async def stats(client: Client, message: Message):
+    if not await is_admin(message.from_user.id): return
+    m = await message.reply("⏳ Fetching database metrics...")
 
-    msg = await message.reply("📊 Fetching metrics...")
-    
-    # Calculate Uptime
     now = datetime.now(timezone.utc)
-    delta = now - client.uptime
-    uptime = get_readable_time(int(delta.total_seconds()))
+    uptime = get_readable_time(int((now - client.uptime).total_seconds()))
 
-    # Fetch Data
-    total_users = await get_total_users()
-    total_banned = await get_total_banned()
-    total_admins = await get_total_admins()
-    total_premium = await get_total_premium()
+    tot_users = await user_data.count_documents({})
+    tot_admins = (await admins_collection.count_documents({})) + len(ADMINS) + 1
+    tot_banned = await banned_users.count_documents({"is_banned": True})
+    tot_premium = await premium_collection.count_documents({"is_premium": True})
+    tot_fsub = await fsub_collection.count_documents({})
     
-    settings = await get_settings()
-    fsub_channels = await get_fsub_channels()
-    
-    fsub_mode = "ON ✅" if settings.get("fsub_mode") else "OFF ❌"
-    protect_mode = "ON ✅" if settings.get("protect_content") else "OFF ❌"
-    auto_del_mode = "ON ✅" if settings.get("auto_delete") else "OFF ❌"
-    auto_del_timer = settings.get("auto_delete_timer", 60)
+    fsub_stat = "ON ✅" if await get_fsub_status() else "OFF ❌"
+    timer = await get_auto_delete()
+    ad_stat = f"ON ✅ ({timer}s)" if timer > 0 else "OFF ❌"
+    pc_stat = "ON ✅" if await get_protect_status() else "OFF ❌"
 
-    stats_text = f"""
-<b>🤖 SYSTEM METRICS</b>
-• <b>Uptime:</b> <code>{uptime}</code>
-
-<b>👥 USER METRICS</b>
-• <b>Total Users:</b> <code>{total_users}</code>
-• <b>Total Admins:</b> <code>{total_admins}</code>
-• <b>Premium Users:</b> <code>{total_premium}</code>
-• <b>Banned Users:</b> <code>{total_banned}</code>
-
-<b>⚙️ BOT CONFIGURATIONS</b>
-• <b>F-Sub Mode:</b> {fsub_mode}
-• <b>Total F-Sub Channels:</b> <code>{len(fsub_channels)}</code>
-• <b>Auto-Delete Mode:</b> {auto_del_mode} (<i>{auto_del_timer}s</i>)
-• <b>Protect Content:</b> {protect_mode}
-"""
-
-    await msg.edit_text(stats_text, parse_mode=ParseMode.HTML)
+    await m.edit_text(BOT_STATS_TEXT.format(
+        uptime=uptime, tot_users=tot_users, tot_admins=tot_admins, 
+        tot_banned=tot_banned, tot_premium=tot_premium, 
+        fsub_stat=fsub_stat, tot_fsub=tot_fsub, ad_stat=ad_stat, pc_stat=pc_stat
+    ))
     
