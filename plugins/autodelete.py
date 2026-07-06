@@ -1,18 +1,12 @@
-import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from helper_func import safe_edit
 from database.database import is_admin, get_auto_delete_status, set_auto_delete_status
 
-async def auto_delete(msg, delay=60):
-    await asyncio.sleep(delay)
-    try: await msg.delete()
-    except: pass
-
 @Client.on_callback_query(filters.regex(r"^autodelete_"))
 async def autodelete_callbacks(client: Client, query: CallbackQuery):
     if not await is_admin(query.from_user.id): 
-        return await query.answer("⚠️ Admins only!", show_alert=True)
+        return await query.answer("⚠️ Access Denied: Admins only!", show_alert=True)
 
     data = query.data
 
@@ -43,4 +37,4 @@ async def autodelete_callbacks(client: Client, query: CallbackQuery):
             [InlineKeyboardButton("✅ Enable", callback_data="autodelete_on"), InlineKeyboardButton("❌ Disable", callback_data="autodelete_off")],
             [InlineKeyboardButton("🔙 Back", callback_data="settings")]
         ]))
-      
+        
