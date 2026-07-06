@@ -11,7 +11,7 @@ def get_env_int(env_key, default_value):
             return default_value
     return default_value
 
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8563450536:AAHmEumUch_2hXvU2lrRz8PXrwDAJWPCjE8")
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8879094453:AAF3akfIR6UO9eMxriVnlKq8LbK2a6TkQ3s")
 APP_ID = get_env_int("APP_ID", 12293838)
 API_HASH = os.environ.get("API_HASH", "cf8c7db0d609148786e7ca5c706909bd")
 
