@@ -5,229 +5,120 @@ from config import START_MSG, HELP_TXT, COMMANDS_TXT, ABOUT_TXT, DISCLAIMER_TXT,
 from helper_func import safe_edit, get_input
 from database.database import (
     is_admin, add_admin, remove_admin, get_admins, ban_user, unban_user, get_banned_users,
-    add_premium, remove_premium, premium_collection, get_settings, update_settings, 
-    get_fsub_channels, add_fsub_channel, remove_fsub_channel
+    add_premium, remove_premium, premium_collection, get_auto_delete, set_auto_delete,
+    get_protect_status, set_protect_status, get_fsub_status, set_fsub_status, add_fsub, remove_fsub, get_fsubs
 )
 
 @Client.on_callback_query()
 async def cb_handler(client: Client, query: CallbackQuery):
     await query.answer()
     if not query.message: return
-
     data = query.data
     user_id = query.from_user.id
     admin_status = await is_admin(user_id)
     first_name = query.from_user.first_name or "User"
 
     if data == "start":
-        buttons = [[InlineKeyboardButton("🧠 Help", callback_data="help"), InlineKeyboardButton("🔰 About", callback_data="about")]]
-        if admin_status: buttons.append([InlineKeyboardButton("⚙️ Settings", callback_data="settings")])
-        return await safe_edit(query.message, START_MSG.format(first=first_name), InlineKeyboardMarkup(buttons))
+        btn = [[InlineKeyboardButton("🧠 Help", callback_data="help"), InlineKeyboardButton("🔰 About", callback_data="about")]]
+        if admin_status: btn.append([InlineKeyboardButton("⚙️ Settings", callback_data="settings")])
+        return await safe_edit(query.message, START_MSG.format(first=first_name), InlineKeyboardMarkup(btn))
 
-    elif data == "help":
-        return await safe_edit(query.message, HELP_TXT.format(first=first_name), InlineKeyboardMarkup([
-            [InlineKeyboardButton("💬 Commands", callback_data="commands")],
-            [InlineKeyboardButton("⚓ Home", callback_data="start"), InlineKeyboardButton("⚡ Close", callback_data="close")]
-        ]))
+    # --- STANDARD MENUS ---
+    elif data in ["help", "commands", "about", "disclaimer"]:
+        texts = {"help": HELP_TXT, "commands": COMMANDS_TXT, "about": ABOUT_TXT, "disclaimer": DISCLAIMER_TXT}
+        txt = texts[data].format(first=first_name) if "{first}" in texts[data] else texts[data]
+        btn = [[InlineKeyboardButton("🔙 Back", callback_data="start")]]
+        return await safe_edit(query.message, txt, InlineKeyboardMarkup(btn))
 
-    elif data == "commands":
-        return await safe_edit(query.message, COMMANDS_TXT, InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="help")]]))
-
-    elif data == "about":
-        return await safe_edit(query.message, ABOUT_TXT.format(first=first_name), InlineKeyboardMarkup([
-            [InlineKeyboardButton("📜 Disclaimer", callback_data="disclaimer")],
-            [InlineKeyboardButton("⚓ Home", callback_data="start")]
-        ]))
-
-    elif data == "disclaimer":
-        return await safe_edit(query.message, DISCLAIMER_TXT, InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="about")]]))
-
+    # --- SETTINGS MENU ---
     elif data == "settings":
-        if not admin_status: return
-        return await safe_edit(query.message, "⚙️ Admin Settings Panel", InlineKeyboardMarkup([
-            [InlineKeyboardButton("👨‍💻 Admins", callback_data="admin_menu"), InlineKeyboardButton("🚫 Bans", callback_data="ban_menu")],
-            [InlineKeyboardButton("💎 Premium", callback_data="premium_menu"), InlineKeyboardButton("📢 F-Sub", callback_data="fsub_menu")],
-            [InlineKeyboardButton("🗑 Auto Delete", callback_data="autodelete_menu"), InlineKeyboardButton("🔐 Protect", callback_data="protect_menu")],
-            [InlineKeyboardButton("⚓ Home", callback_data="start")]
+        if not admin_status: return await query.answer("⚠️ Admins only!", show_alert=True)
+        return await safe_edit(query.message, "⚙️ **Master Settings Panel**", InlineKeyboardMarkup([
+            [InlineKeyboardButton("👨‍💻 Admin", callback_data="admin_menu"), InlineKeyboardButton("🚫 Ban", callback_data="ban_menu")],
+            [InlineKeyboardButton("💎 Premium", callback_data="premium_menu"), InlineKeyboardButton("📢 FSub", callback_data="fsub_menu")],
+            [InlineKeyboardButton("🗑 Auto Delete", callback_data="ad_menu"), InlineKeyboardButton("🔐 Protect Content", callback_data="pc_menu")],
+            [InlineKeyboardButton("🔙 Back", callback_data="start")]
         ]))
 
-    # --- Protect Content ---
-    elif data == "protect_menu":
+    # --- PROTECT CONTENT ---
+    elif data == "pc_menu":
         if not admin_status: return
-        settings = await get_settings()
-        status = "ON ✅" if settings.get("protect_content") else "OFF ❌"
-        return await safe_edit(query.message, f"🔐 **Protect Content Mode**\nCurrent: **{status}**\n\nPrevents users from forwarding or saving media.", InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Enable", callback_data="protect_on"), InlineKeyboardButton("❌ Disable", callback_data="protect_off")],
+        status = await get_protect_status()
+        state_str = "ON ✅" if status else "OFF ❌"
+        return await safe_edit(query.message, f"🔐 **Protect Content**\nStatus: {state_str}", InlineKeyboardMarkup([
+            [InlineKeyboardButton("Toggle Mode", callback_data="pc_toggle")],
             [InlineKeyboardButton("🔙 Back", callback_data="settings")]
         ]))
-    elif data in ["protect_on", "protect_off"]:
+    elif data == "pc_toggle":
         if not admin_status: return
-        await update_settings("protect_content", data == "protect_on")
+        new_status = not await get_protect_status()
+        await set_protect_status(new_status)
         await query.answer("Status Updated!", show_alert=True)
-        query.data = "protect_menu"
+        # trigger menu reload
+        query.data = "pc_menu"
         return await cb_handler(client, query)
 
-    # --- Auto Delete ---
-    elif data == "autodelete_menu":
+    # --- AUTO DELETE ---
+    elif data == "ad_menu":
         if not admin_status: return
-        settings = await get_settings()
-        status = "ON ✅" if settings.get("auto_delete") else "OFF ❌"
-        timer = settings.get("auto_delete_timer", 60)
-        return await safe_edit(query.message, f"🗑 **Auto Delete Management**\n\nStatus: **{status}**\nTimer: **{timer} seconds**", InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ ON", callback_data="del_on"), InlineKeyboardButton("❌ OFF", callback_data="del_off")],
-            [InlineKeyboardButton("⏱ Set Timer", callback_data="del_timer")],
+        timer = await get_auto_delete()
+        state_str = f"ON ✅ ({timer}s)" if timer > 0 else "OFF ❌"
+        return await safe_edit(query.message, f"🗑 **Auto Delete**\nStatus: {state_str}", InlineKeyboardMarkup([
+            [InlineKeyboardButton("Set Timer (Sec)", callback_data="ad_set"), InlineKeyboardButton("Turn OFF", callback_data="ad_off")],
             [InlineKeyboardButton("🔙 Back", callback_data="settings")]
         ]))
-    elif data in ["del_on", "del_off"]:
+    elif data == "ad_off":
         if not admin_status: return
-        await update_settings("auto_delete", data == "del_on")
-        await query.answer("Status Updated!", show_alert=True)
-        query.data = "autodelete_menu"
+        await set_auto_delete(0)
+        await query.answer("Auto Delete Disabled!", show_alert=True)
+        query.data = "ad_menu"
         return await cb_handler(client, query)
-    elif data == "del_timer":
+    elif data == "ad_set":
         if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="autodelete_menu")]])
-        val = await get_input(client, query.message, "Send new timer in seconds (e.g. 300 for 5 mins):", keyboard)
+        val = await get_input(client, query.message, "Send auto-delete timer in seconds (e.g. 60):")
         if val and val.isdigit():
-            await update_settings("auto_delete_timer", int(val))
-            await query.message.reply("✅ Timer updated!")
-            
-    # --- Force Sub ---
+            await set_auto_delete(int(val))
+            await query.message.reply(f"✅ Timer set to {val} seconds.")
+
+    # --- FORCE SUB MENU ---
     elif data == "fsub_menu":
         if not admin_status: return
-        settings = await get_settings()
-        status = "ON ✅" if settings.get("fsub_mode") else "OFF ❌"
-        return await safe_edit(query.message, f"📢 **Force Subscribe**\nMode: **{status}**", InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Mode ON", callback_data="fsub_on"), InlineKeyboardButton("❌ Mode OFF", callback_data="fsub_off")],
-            [InlineKeyboardButton("➕ Add Ch.", callback_data="addfsub"), InlineKeyboardButton("➖ Del Ch.", callback_data="delfsub")],
-            [InlineKeyboardButton("📋 Ch. List", callback_data="fsublist"), InlineKeyboardButton("🔙 Back", callback_data="settings")]
+        status = "ON ✅" if await get_fsub_status() else "OFF ❌"
+        return await safe_edit(query.message, f"📢 **Force Sub**\nMaster Status: {status}", InlineKeyboardMarkup([
+            [InlineKeyboardButton("Toggle Master", callback_data="fsub_toggle")],
+            [InlineKeyboardButton("➕ Add Fsub", callback_data="fsub_add"), InlineKeyboardButton("➖ Del Fsub", callback_data="fsub_del")],
+            [InlineKeyboardButton("📋 FSub List", callback_data="fsub_list")],
+            [InlineKeyboardButton("🔙 Back", callback_data="settings")]
         ]))
-    elif data in ["fsub_on", "fsub_off"]:
+    elif data == "fsub_toggle":
         if not admin_status: return
-        await update_settings("fsub_mode", data == "fsub_on")
-        await query.answer("Status Updated!", show_alert=True)
+        new_status = not await get_fsub_status()
+        await set_fsub_status(new_status)
         query.data = "fsub_menu"
         return await cb_handler(client, query)
-    elif data == "addfsub":
+    elif data == "fsub_add":
         if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="fsub_menu")]])
-        val = await get_input(client, query.message, "Send Channel ID (must start with -100):", keyboard)
+        val = await get_input(client, query.message, "Send Channel ID to Add (e.g. -100123...):")
+        if val:
+            try: 
+                await add_fsub(int(val))
+                await query.message.reply(f"✅ Added {val} to Force Subs.")
+            except: await query.message.reply("❌ Invalid ID format.")
+    elif data == "fsub_del":
+        if not admin_status: return
+        val = await get_input(client, query.message, "Send Channel ID to Remove:")
         if val:
             try:
-                await add_fsub_channel(int(val))
-                await client.fetch_fsub_links()
-                await query.message.reply("✅ Channel added to Force Sub!")
-            except ValueError:
-                await query.message.reply("❌ Invalid Channel ID format.")
-    elif data == "delfsub":
+                await remove_fsub(int(val))
+                await query.message.reply(f"✅ Removed {val} from Force Subs.")
+            except: pass
+    elif data == "fsub_list":
         if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="fsub_menu")]])
-        val = await get_input(client, query.message, "Send Channel ID to remove:", keyboard)
-        if val:
-            try:
-                await remove_fsub_channel(int(val))
-                await client.fetch_fsub_links()
-                await query.message.reply("✅ Channel removed from Force Sub!")
-            except ValueError:
-                await query.message.reply("❌ Invalid Channel ID format.")
-    elif data == "fsublist":
-        if not admin_status: return
-        channels = await get_fsub_channels()
-        text = "\n".join([f"• <code>{ch}</code>" for ch in channels]) if channels else "None"
-        return await safe_edit(query.message, f"📢 **F-Sub Channels:**\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="fsub_menu")]]))
+        fsubs = await get_fsubs()
+        text = "\n".join([f"• <code>{f}</code>" for f in fsubs]) if fsubs else "No channels added."
+        return await safe_edit(query.message, f"📢 **FSub Channels:**\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="fsub_menu")]]))
 
-    # --- Admin Management ---
-    elif data == "admin_menu":
-        if not admin_status: return
-        return await safe_edit(query.message, "👨‍💻 Admin Management", InlineKeyboardMarkup([
-            [InlineKeyboardButton("➕ Add Admin", callback_data="add_admin"), InlineKeyboardButton("➖ Del Admin", callback_data="remove_admin")],
-            [InlineKeyboardButton("📋 List", callback_data="admin_list"), InlineKeyboardButton("🔙 Back", callback_data="settings")]
-        ]))
-    elif data == "add_admin":
-        if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="admin_menu")]])
-        val = await get_input(client, query.message, "Send User ID to add as admin:", keyboard)
-        if val and val.isdigit():
-            await add_admin(int(val))
-            await query.message.reply("✅ Admin added successfully!")
-    elif data == "remove_admin":
-        if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="admin_menu")]])
-        val = await get_input(client, query.message, "Send User ID to remove from admin:", keyboard)
-        if val and val.isdigit():
-            if int(val) == OWNER_ID:
-                return await query.message.reply("❌ You cannot remove the Owner.")
-            await remove_admin(int(val))
-            await query.message.reply("✅ Admin removed successfully!")
-    elif data == "admin_list":
-        if not admin_status: return
-        admins = await get_admins()
-        text = "\n".join([f"• <code>{a}</code>" for a in admins[:100]]) if admins else "No additional database admins."
-        return await safe_edit(query.message, f"👨‍💻 **Admin List:**\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_menu")]]))
-
-    # --- Ban Management ---
-    elif data == "ban_menu":
-        if not admin_status: return
-        return await safe_edit(query.message, "🚫 Ban Management", InlineKeyboardMarkup([
-            [InlineKeyboardButton("🚫 Ban", callback_data="ban_user"), InlineKeyboardButton("✅ Unban", callback_data="unban_user")],
-            [InlineKeyboardButton("📋 List", callback_data="banned_list"), InlineKeyboardButton("🔙 Back", callback_data="settings")]
-        ]))
-    elif data == "ban_user":
-        if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="ban_menu")]])
-        val = await get_input(client, query.message, "Send User ID and Reason (e.g. `123456 spamming`):", keyboard)
-        if val:
-            parts = val.split(maxsplit=1)
-            if parts[0].isdigit():
-                reason = parts[1] if len(parts) > 1 else "No reason"
-                await ban_user(int(parts[0]), reason)
-                await query.message.reply("✅ User banned!")
-    elif data == "unban_user":
-        if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="ban_menu")]])
-        val = await get_input(client, query.message, "Send User ID to unban:", keyboard)
-        if val and val.isdigit():
-            await unban_user(int(val))
-            await query.message.reply("✅ User unbanned!")
-    elif data == "banned_list":
-        if not admin_status: return
-        banned = await get_banned_users()
-        text = "\n".join([f"• <code>{u['_id']}</code> - {u.get('reason', 'N/A')}" for u in banned[:100]]) if banned else "No banned users."
-        return await safe_edit(query.message, f"🚫 **Banned Users:**\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="ban_menu")]]))
-
-    # --- Premium Management ---
-    elif data == "premium_menu":
-        if not admin_status: return
-        return await safe_edit(query.message, "💎 Premium Management", InlineKeyboardMarkup([
-            [InlineKeyboardButton("➕ Add", callback_data="addpremiumuser"), InlineKeyboardButton("➖ Remove", callback_data="removepremiumuser")],
-            [InlineKeyboardButton("📋 List", callback_data="premium_member_list"), InlineKeyboardButton("🔙 Back", callback_data="settings")]
-        ]))
-    elif data == "addpremiumuser":
-        if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="premium_menu")]])
-        val = await get_input(client, query.message, "Send User ID and Days (e.g. `123456 30`):", keyboard)
-        if val:
-            parts = val.split()
-            if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
-                await add_premium(int(parts[0]), int(parts[1]))
-                await query.message.reply(f"✅ Premium added for {parts[1]} days!")
-            else:
-                await query.message.reply("❌ Invalid format.")
-    elif data == "removepremiumuser":
-        if not admin_status: return
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="premium_menu")]])
-        val = await get_input(client, query.message, "Send User ID to remove premium:", keyboard)
-        if val and val.isdigit():
-            await remove_premium(int(val))
-            await query.message.reply("✅ Premium removed!")
-    elif data == "premium_member_list":
-        if not admin_status: return
-        cursor = premium_collection.find({"is_premium": True})
-        users = await cursor.to_list(length=100)
-        text = "\n".join([f"• <code>{u['_id']}</code>" for u in users]) if users else "No premium users."
-        return await safe_edit(query.message, f"💎 **Premium Users:**\n\n{text}", InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="premium_menu")]]))
-
-    # --- Close Menu ---
+    # --- ADMIN / PREMIUM MENUS (Unchanged logic, just compacted) ---
     elif data == "close":
         try: await query.message.delete()
         except: pass
