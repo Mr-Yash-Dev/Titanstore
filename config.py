@@ -19,7 +19,7 @@ LOG_CHANNEL_ID = get_env_int("LOG_CHANNEL_ID", -1002313688533)
 OWNER_ID = get_env_int("OWNER_ID", 5356695781)
 PORT = get_env_int("PORT", 8080)
 TG_BOT_WORKERS = get_env_int("TG_BOT_WORKERS", 4)
-ADMINS = get_env_list("ADMINS", 5356695781) # Space separated Admin IDs in environment
+ADMINS = get_env_list("ADMINS") # Space separated Admin IDs in environment
 
 DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://TITANBOTS:TITANBOTS@cluster0.yagdfyt.mongodb.net/?appName=Cluster0")
 DB_NAME = os.environ.get("DATABASE_NAME", "TitanBot")
