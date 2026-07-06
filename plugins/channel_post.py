@@ -24,7 +24,8 @@ async def private_message_handler(client: Client, message: Message):
         base64_string = await encode(f"get-{post_message.id * abs(client.db_channel.id)}")
         link = f"https://t.me/{client.username}?start={base64_string}"
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share", url=f"https://telegram.me/share/url?url={urllib.parse.quote(link)}")]])
-        await reply_text.edit_text(f"<b>Link:</b>\n{link}", reply_markup=keyboard, disable_web_page_preview=True)
+        
+        await reply_text.edit_text(f"<b>Link:</b>\n{link}", reply_markup=keyboard)
     else:
         try: await message.reply_text(USER_REPLY_TEXT, quote=True)
         except: pass
