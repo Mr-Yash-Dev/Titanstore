@@ -1,5 +1,5 @@
 import motor.motor_asyncio
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from config import DB_URI, DB_NAME, OWNER_ID, ADMINS
 
 dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
@@ -11,13 +11,21 @@ admins_collection = database["admins"]
 maintenance_collection = database["maintenance"]
 premium_collection = database["premium_users"]
 settings_collection = database["settings"]
-fsub_collection = database["fsub_channels"]
 
 async def is_user_present(user_id: int) -> bool:
     return await user_data.find_one({"_id": user_id}) is not None
 
 async def add_user(user_id: int, first_name=None, username=None):
-    await user_data.update_one({"_id": user_id}, {"$set": {"first_name": first_name, "username": username, "joined_at": datetime.now(timezone.utc)}}, upsert=True)
+    await user_data.update_one(
+        {"_id": user_id},
+        {"$set": {"first_name": first_name, "username": username, "joined_at": datetime.now(timezone.utc)}},
+        upsert=True
+    )
+
+async def get_all_users():
+    cursor = user_data.find({}, {"_id": 1})
+    users = await cursor.to_list(length=None)
+    return [user["_id"] for user in users]
 
 async def delete_user(user_id: int):
     await user_data.delete_one({"_id": user_id})
@@ -37,7 +45,8 @@ async def unban_user(user_id: int):
     await banned_users.update_one({"_id": user_id}, {"$set": {"is_banned": False, "reason": ""}}, upsert=True)
 
 async def get_banned_users():
-    return await banned_users.find({"is_banned": True}).to_list(length=None)
+    cursor = banned_users.find({"is_banned": True})
+    return await cursor.to_list(length=None)
 
 async def add_admin(user_id: int):
     await admins_collection.update_one({"_id": user_id}, {"$set": {"is_admin": True}}, upsert=True)
@@ -46,26 +55,38 @@ async def remove_admin(user_id: int):
     await admins_collection.delete_one({"_id": user_id})
 
 async def get_admins():
-    admins = await admins_collection.find({}, {"_id": 1}).to_list(length=None)
+    cursor = admins_collection.find({}, {"_id": 1})
+    admins = await cursor.to_list(length=None)
     return [admin["_id"] for admin in admins]
 
 async def is_owner(user_id: int) -> bool:
     return user_id == OWNER_ID
 
 async def is_admin(user_id: int) -> bool:
-    if user_id == OWNER_ID or user_id in ADMINS: return True
+    if user_id == OWNER_ID or user_id in ADMINS: 
+        return True
     data = await admins_collection.find_one({"_id": user_id})
     return data is not None and data.get("is_admin", False)
 
 async def add_premium(user_id: int, days: int):
     expires_at = datetime.now(timezone.utc) + timedelta(days=days)
-    await premium_collection.update_one({"_id": user_id}, {"$set": {"is_premium": True, "expires_at": expires_at, "notified": False}}, upsert=True)
+    await premium_collection.update_one(
+        {"_id": user_id}, 
+        {"$set": {"is_premium": True, "expires_at": expires_at, "notified": False}}, 
+        upsert=True
+    )
 
 async def remove_premium(user_id: int):
     await premium_collection.delete_one({"_id": user_id})
 
+async def get_premium_users():
+    cursor = premium_collection.find({}, {"_id": 1})
+    users = await cursor.to_list(length=None)
+    return [user["_id"] for user in users]
+
 async def is_premium(user_id: int) -> bool:
     if await is_admin(user_id): return True
+    
     data = await premium_collection.find_one({"_id": user_id})
     if data and data.get("is_premium"):
         expires_at = data.get("expires_at")
@@ -80,36 +101,14 @@ async def is_maintenance(user_id: int) -> bool:
     data = await maintenance_collection.find_one({"_id": "maintenance"})
     return data is not None and data.get("maintenance") == "on"
 
-# --- SETTINGS / TOGGLES ---
-async def get_auto_delete() -> int:
+async def get_auto_delete_status() -> bool:
     data = await settings_collection.find_one({"_id": "auto_delete"})
-    return data.get("timer", 0) if data else 0 
+    return data.get("status", True) if data else True
 
-async def set_auto_delete(timer: int):
-    await settings_collection.update_one({"_id": "auto_delete"}, {"$set": {"timer": timer}}, upsert=True)
-
-async def get_protect_status() -> bool:
-    data = await settings_collection.find_one({"_id": "protect_content"})
-    return data.get("status", False) if data else False
-
-async def set_protect_status(status: bool):
-    await settings_collection.update_one({"_id": "protect_content"}, {"$set": {"status": status}}, upsert=True)
-
-# --- FORCE SUB DYNAMIC DB ---
-async def get_fsub_status() -> bool:
-    data = await settings_collection.find_one({"_id": "fsub_status"})
-    return data.get("status", False) if data else False
-
-async def set_fsub_status(status: bool):
-    await settings_collection.update_one({"_id": "fsub_status"}, {"$set": {"status": status}}, upsert=True)
-
-async def add_fsub(chat_id: int):
-    await fsub_collection.update_one({"_id": chat_id}, {"$set": {"_id": chat_id}}, upsert=True)
-
-async def remove_fsub(chat_id: int):
-    await fsub_collection.delete_one({"_id": chat_id})
-
-async def get_fsubs():
-    cursor = fsub_collection.find({})
-    return [doc["_id"] async for doc in cursor]
+async def set_auto_delete_status(status: bool):
+    await settings_collection.update_one(
+        {"_id": "auto_delete"}, 
+        {"$set": {"status": status}}, 
+        upsert=True
+    )
     
