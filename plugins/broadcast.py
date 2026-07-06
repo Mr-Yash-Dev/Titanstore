@@ -7,7 +7,7 @@ from database.database import is_admin, get_all_users
 @Client.on_message(filters.command("broadcast") & filters.private)
 async def broadcast_command(client: Client, message: Message):
     if not await is_admin(message.from_user.id):
-        return await message.reply_text("⚠️ Admins only!")
+        return await message.reply_text("⚠️ Access Denied: Admins only!")
         
     if not message.reply_to_message:
         return await message.reply_text("Please reply to a message to broadcast it.")
@@ -22,7 +22,7 @@ async def broadcast_command(client: Client, message: Message):
         try:
             await message.reply_to_message.copy(user_id)
             success += 1
-            await asyncio.sleep(0.1)  # Stagger to prevent global Telegram limits
+            await asyncio.sleep(0.1)
         except FloodWait as e:
             await asyncio.sleep(e.value)
             await message.reply_to_message.copy(user_id)
