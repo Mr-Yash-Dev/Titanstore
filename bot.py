@@ -2,7 +2,7 @@ import sys
 import asyncio
 from datetime import datetime, timedelta, timezone
 from aiohttp import web
-from plugins import web_server
+from plugins.web_server import web_server
 import pyromod.listen
 from pyrogram import Client
 from pyrogram.enums import ParseMode
@@ -82,18 +82,13 @@ class Bot(Client):
                 self.invitelinks[key_name] = link
                 self.logger.info(f"✅ Force Sub Link generated for {label} ({channel_id})")
             except Exception as e:
-                self.logger.error(f"❌ FORCE SUB CRITICAL: Failed to get/generate link for {label} ({channel_id}). Error: {e}")
+                self.logger.error(f"❌ FORCE SUB CRITICAL: Failed to get link for {label} ({channel_id}). Error: {e}")
                 self.invitelinks[key_name] = None
 
         await get_invite(FORCE_SUB_CHANNEL_1, "fs1", "Channel 1")
         await get_invite(FORCE_SUB_CHANNEL_2, "fs2", "Channel 2")
         await get_invite(FORCE_SUB_CHANNEL_3, "fs3", "Channel 3")
         await get_invite(FORCE_SUB_CHANNEL_4, "fs4", "Channel 4")
-
-        self.invitelink = self.invitelinks.get("fs1")
-        self.invitelink2 = self.invitelinks.get("fs2")
-        self.invitelink3 = self.invitelinks.get("fs3")
-        self.invitelink4 = self.invitelinks.get("fs4")
 
         try:
             db_channel = await self.get_chat(CHANNEL_ID)
