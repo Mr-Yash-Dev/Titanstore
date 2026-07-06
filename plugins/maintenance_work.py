@@ -4,7 +4,7 @@ from database.database import maintenance_collection, is_admin
 
 @Client.on_message(filters.command("maintenance") & filters.private)
 async def maintenance_toggle_command(client: Client, message: Message):
-    if not await is_admin(message.from_user.id): return
+    if not await is_admin(message.from_user.id): return await message.reply_text("⚠️ Access Denied: Admins only!")
 
     if len(message.command) != 2:
         return await message.reply_text("<b>Usage:</b>\n`/maintenance on`\n`/maintenance off`")
