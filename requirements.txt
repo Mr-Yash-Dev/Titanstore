@@ -6,4 +6,4 @@ pymongo[srv]
 dnspython
 aiohttp
 humanize
-
+requests
