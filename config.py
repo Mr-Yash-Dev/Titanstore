@@ -4,13 +4,14 @@ from logging.handlers import RotatingFileHandler
 
 def get_env_int(env_key, default_value):
     val = os.environ.get(env_key)
-    return int(val) if val else default_value
+    if val:
+        try:
+            return int(val)
+        except ValueError:
+            return default_value
+    return default_value
 
-def get_env_list(env_key):
-    val = os.environ.get(env_key, "")
-    return [int(i) for i in val.split() if i.strip().isdigit()]
-
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8879094453:AAF3akfIR6UO9eMxriVnlKq8LbK2a6TkQ3s")
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "8563450536:AAHmEumUch_2hXvU2lrRz8PXrwDAJWPCjE8")
 APP_ID = get_env_int("APP_ID", 12293838)
 API_HASH = os.environ.get("API_HASH", "cf8c7db0d609148786e7ca5c706909bd")
 
@@ -18,42 +19,47 @@ CHANNEL_ID = get_env_int("CHANNEL_ID", -1002096962621)
 LOG_CHANNEL_ID = get_env_int("LOG_CHANNEL_ID", -1002313688533)
 OWNER_ID = get_env_int("OWNER_ID", 5356695781)
 PORT = get_env_int("PORT", 8080)
-TG_BOT_WORKERS = get_env_int("TG_BOT_WORKERS", 4)
-ADMINS = get_env_list("ADMINS") # Space separated Admin IDs in environment
+FILE_AUTO_DELETE = get_env_int("FILE_AUTO_DELETE", 60)
+
+# Load additional admins from environment variable (comma separated)
+ADMINS_STR = os.environ.get("ADMINS", "")
+ADMINS = [int(x) for x in ADMINS_STR.split(",") if x.strip().isdigit()]
 
 DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://TITANBOTS:TITANBOTS@cluster0.yagdfyt.mongodb.net/?appName=Cluster0")
 DB_NAME = os.environ.get("DATABASE_NAME", "TitanBot")
 
+FORCE_SUB_CHANNEL_1 = get_env_int("FORCE_SUB_CHANNEL_1", -1002071945738)
+FORCE_SUB_CHANNEL_2 = get_env_int("FORCE_SUB_CHANNEL_2", -1001972961497)
+FORCE_SUB_CHANNEL_3 = get_env_int("FORCE_SUB_CHANNEL_3", -1001987271131)
+FORCE_SUB_CHANNEL_4 = get_env_int("FORCE_SUB_CHANNEL_4", -1002038066716)
+
+TG_BOT_WORKERS = get_env_int("TG_BOT_WORKERS", 4)
+
 START_PIC = os.environ.get("START_PIC", "https://envs.sh/WeX.jpg")
 FORCE_PIC = os.environ.get("FORCE_PIC", "https://envs.sh/TPh.jpg")
 
-# --- COMBINED SCRIPT TEXTS ---
-HELP_TXT = "<b>ᴛʜɪs ɪs ᴀɴ ꜰɪʟᴇꜱᴛᴏʀᴇ ʙᴏᴛ ᴡᴏʀᴋ ғᴏʀ @TitanCineplex\n\n sɪᴍᴘʟʏ ᴄʟɪᴄᴋ ᴏɴ ʟɪɴᴋ ᴀɴᴅ sᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ ᴊᴏɪɴ 🫵 ᴄʜᴀɴɴᴇʟs ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ!</b>"
-ABOUT_TXT = "<b>✯ ᴄʀᴇᴀᴛᴏʀ : <a href=https://t.me/TitanXBots>ᎩᎪᏚʜཛ</a>\n✯ ʟᴀɴɢᴜᴀɢᴇ : ᴘʏᴛʜᴏɴ3\n✯ ʟɪʙʀᴀʀʏ : ᴘʏʀᴏɢʀᴀᴍ\n✯ ꜱᴏᴜʀᴄᴇ : ᴘʀɪᴠᴀᴛᴇ\n✯ ᴜᴘᴅᴀᴛᴇꜱ : <a href=https://t.me/TitanXBots>ᴛɪᴛᴀɴxʙᴏᴛꜱ</a></b>"
-COMMANDS_TXT = "<b>🤖 Bot Commands Menu</b>\n\n• /start - Initialize\n• /batch - Multi-link Generator\n• /genlink - Single-link\n• Click ⚙️ Settings on /start panel to modify bot."
-DISCLAIMER_TXT = "<b>⚠️ Disclaimer Notice</b>\n\nThis bot is strictly meant for sharing personal storage files. We respect all DMCA laws."
+HELP_TXT = "<b>ᴛʜɪs ɪs ᴀɴ ꜰɪʟᴇꜱᴛᴏʀᴇ ʙᴏᴛ ᴡᴏʀᴋ ғᴏʀ @TitanCineplex\n\n✯ ʙᴏᴛ ᴄᴏᴍᴍᴀɴᴅs\n├/start : sᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ\n├/about : ᴏᴜʀ Iɴғᴏʀᴍᴀᴛɪᴏɴ\n└/help : ʜᴇʟᴘ ʀᴇʟᴀᴛᴇᴅ ʙᴏᴛ\n\n sɪᴍᴘʟʏ ᴄʟɪᴄᴋ ᴏɴ ʟɪɴᴋ ᴀɴᴅ sᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ ᴊᴏɪɴ 🫵 ᴄʜᴀɴɴᴇʟs ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ ᴛʜᴀᴛs ɪᴛ.....!</b>"
+ABOUT_TXT = "<b>✯ ᴄʀᴇᴀᴛᴏʀ : <a href=https://t.me/TitanXBots>ᎩᎪᏚʜཛ</a>\n✯ ʟᴀɴɢᴜᴀɢᴇ : <a href=https://www.python.org>ᴘʏᴛʜᴏɴ3</a>\n✯ ʟɪʙʀᴀʀʏ : <a href='https://docs.pyrogram.org/'>ᴘʏʀᴏɢʀᴀᴍ</a>\n✯ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : ᴘʀɪᴠᴀᴛᴇ\n✯ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ : <a href=https://t.me/TitanXBots>ᴛɪᴛᴀɴxʙᴏᴛꜱ</a>\n✯ ꜱᴜᴘᴘᴏʀᴛ : <a href=https://t.me/TitanMattersSupport>ᴛɪᴛᴀɴ ɢʀᴏᴜᴘ</a></b>"
+COMMANDS_TXT = "<b>🤖 Bot Commands Menu</b>\n\n• /start - Initialize the Bot\n• /help - Display Support Help Options\n• /about - Display Bot Metadata\n\n<b>Admin Commands:</b>\n• /users - Total Users Count\n• /broadcast - Send copy broadcasts\n• /batch - Multi-link Generator\n• /genlink - Single-link Generator\n• /maintenance - Toggle system down-time"
+DISCLAIMER_TXT = "<b>⚠️ Disclaimer Notice</b>\n\nThis bot is strictly meant for sharing personal storage files. Content distributed via third-party storage channels is independent of the developer infrastructure. Compliance with copyright legislation remains the user's explicit responsibility."
 START_MSG = os.environ.get("START_MESSAGE", "ʜᴇʟʟᴏ {first}\n\nɪ ᴄᴀɴ ꜱᴛᴏʀᴇ ᴘʀɪᴠᴀᴛᴇ ꜰɪʟᴇꜱ ɪɴ ꜱᴘᴇᴄɪꜰɪᴇᴅ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ᴏᴛʜᴇʀ ᴜꜱᴇʀꜱ ᴄᴀɴ ᴀᴄᴄᴇꜱꜱ ɪᴛ ꜰʀᴏᴍ ꜱᴘᴇᴄɪᴀʟ ʟɪɴᴋ.")
-FORCE_MSG = os.environ.get("FORCE_SUB_MESSAGE", "ʜᴇʟʟᴏ {first}\n\n<b>ʏᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ɪɴ ᴍʏ ᴄʜᴀɴɴᴇʟ(ꜱ) ᴛᴏ ᴜꜱᴇ ᴍᴇ\n\nᴋɪɴᴅʟʏ ᴘʟᴇᴀꜱᴇ ᴊᴏɪɴ ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ</b>")
-USER_REPLY_TEXT = "👋 ʜᴇʏ ꜰʀɪᴇɴᴅ, 🚫 ᴅᴏɴ'ᴛ ꜱᴇɴᴅ ᴀɴʏ ᴍᴇꜱꜱᴀɢᴇ ᴛᴏ ᴍᴇ ᴅɪʀᴇᴄᴛʟʏ!"
+FORCE_MSG = os.environ.get("FORCE_SUB_MESSAGE", "ʜᴇʟʟᴏ {first}\n\n<b>ʏᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ɪɴ ᴍʏ ᴄʜᴀɴɴᴇʟ/ɢʀᴏᴜᴘ ᴛᴏ ᴜꜱᴇ ᴍᴇ\n\nᴋɪɴᴅʟʏ ᴘʟᴇᴀꜱᴇ ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟꜱ</b>")
 
-BOT_STATS_TEXT = """<b>📊 Bot Uptime Metrics</b>
+CUSTOM_CAPTION = os.environ.get("CUSTOM_CAPTION", None)
+PROTECT_CONTENT = os.environ.get('PROTECT_CONTENT', "False").lower() == "true"
 
-⏱ **Uptime:** {uptime}
-👥 **Total Users:** {tot_users}
-👨‍💻 **Total Admins:** {tot_admins}
-🚫 **Banned Users:** {tot_banned}
-💎 **Premium Users:** {tot_premium}
-
-⚙️ <b>Settings Status:</b>
-📢 **Force Sub Mode:** {fsub_stat} (Channels: {tot_fsub})
-🗑 **Auto-Delete Mode:** {ad_stat}
-🔐 **Protect Content:** {pc_stat}"""
-
+BOT_STATS_TEXT = "<b>BOT UPTIME</b>\n{uptime}"
+USER_REPLY_TEXT = "👋 ʜᴇʏ ꜰʀɪᴇɴᴅ, 🚫 ᴅᴏɴ'ᴛ ꜱᴇɴᴅ ᴀɴʏ ᴍᴇꜱꜱᴀɢᴇ ᴛᴏ ᴍᴇ ᴅɪʀᴇᴄᴛʟʏ ɪ'ᴍ ᴏɴʟʏ ꜰɪʟᴇ ꜱᴛᴏʀᴇ ʙᴏᴛ!"
 LOG_FILE_NAME = "filesharingbot.txt"
+
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s - %(levelname)s] - %(name)s - %(message)s",
-    handlers=[RotatingFileHandler(LOG_FILE_NAME, maxBytes=50000000, backupCount=10), logging.StreamHandler()]
+    datefmt='%d-%b-%y %H:%M:%S',
+    handlers=[
+        RotatingFileHandler(LOG_FILE_NAME, maxBytes=50000000, backupCount=10),
+        logging.StreamHandler()
+    ]
 )
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 
