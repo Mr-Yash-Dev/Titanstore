@@ -7,12 +7,12 @@ from pyrogram.errors import FloodWait
 
 from config import (
     FORCE_PIC, FORCE_MSG, LOG_CHANNEL_ID, START_PIC, 
-    START_MSG, PROTECT_CONTENT, FILE_AUTO_DELETE
+    START_MSG, FILE_AUTO_DELETE
 )
 from helper_func import subscribed, decode, get_messages, get_readable_time
 from database.database import (
     is_user_present, add_user, is_user_banned, get_ban_reason, 
-    is_maintenance, is_admin, get_auto_delete_status
+    is_maintenance, is_admin, get_auto_delete_status, get_protect_status
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -57,14 +57,28 @@ async def start_command(client: Client, message: Message):
         await temp.delete()
 
         copied_msgs = []
+        
+        # 🔒 Dynamically check if Protect Content is ON in the database
+        is_protected = await get_protect_status()
+        
         for msg in messages:
             if msg.empty: continue 
             try:
-                copied = await msg.copy(chat_id=user_id, caption=msg.caption.html if msg.caption else "", parse_mode=ParseMode.HTML, protect_content=PROTECT_CONTENT)
+                copied = await msg.copy(
+                    chat_id=user_id, 
+                    caption=msg.caption.html if msg.caption else "", 
+                    parse_mode=ParseMode.HTML, 
+                    protect_content=is_protected
+                )
                 copied_msgs.append(copied)
             except FloodWait as e:
                 await asyncio.sleep(e.value)
-                copied = await msg.copy(chat_id=user_id, caption=msg.caption.html if msg.caption else "", parse_mode=ParseMode.HTML, protect_content=PROTECT_CONTENT)
+                copied = await msg.copy(
+                    chat_id=user_id, 
+                    caption=msg.caption.html if msg.caption else "", 
+                    parse_mode=ParseMode.HTML, 
+                    protect_content=is_protected
+                )
                 copied_msgs.append(copied)
             except Exception as e:
                 logging.error(f"Copy error: {e}")
@@ -78,6 +92,7 @@ async def start_command(client: Client, message: Message):
         return
 
     btn = [[InlineKeyboardButton("🧠 HELP", callback_data="help"), InlineKeyboardButton("🔰 ABOUT", callback_data="about")]]
+    
     if await is_admin(user_id): 
         btn.append([InlineKeyboardButton("⚙️ SETTINGS", callback_data="settings")])
         
