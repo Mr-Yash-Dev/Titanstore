@@ -121,4 +121,15 @@ async def set_auto_delete_status(status: bool):
         {"$set": {"status": status}}, 
         upsert=True
     )
+
+async def get_protect_status() -> bool:
+    data = await settings_collection.find_one({"_id": "protect_content"})
+    return data.get("status", False) if data else False
+
+async def set_protect_status(status: bool):
+    await settings_collection.update_one(
+        {"_id": "protect_content"}, 
+        {"$set": {"status": status}}, 
+        upsert=True
+    )
     
