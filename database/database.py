@@ -12,6 +12,7 @@ maintenance_collection = database["maintenance"]
 premium_collection = database["premium_users"]
 settings_collection = database["settings"]
 
+# --- User Management ---
 async def is_user_present(user_id: int) -> bool:
     return await user_data.find_one({"_id": user_id}) is not None
 
@@ -30,6 +31,7 @@ async def get_all_users():
 async def delete_user(user_id: int):
     await user_data.delete_one({"_id": user_id})
 
+# --- Ban Management ---
 async def is_user_banned(user_id: int) -> bool:
     data = await banned_users.find_one({"_id": user_id})
     return data.get("is_banned", False) if data else False
@@ -48,6 +50,7 @@ async def get_banned_users():
     cursor = banned_users.find({"is_banned": True})
     return await cursor.to_list(length=None)
 
+# --- Admin Management ---
 async def add_admin(user_id: int):
     await admins_collection.update_one({"_id": user_id}, {"$set": {"is_admin": True}}, upsert=True)
 
@@ -75,6 +78,7 @@ async def is_admin(user_id) -> bool:
     except (ValueError, TypeError):
         return False
 
+# --- Premium Management ---
 async def add_premium(user_id: int, days: int):
     expires_at = datetime.now(timezone.utc) + timedelta(days=days)
     await premium_collection.update_one(
@@ -106,11 +110,13 @@ async def is_premium(user_id) -> bool:
     except (ValueError, TypeError):
         return False
 
+# --- Maintenance ---
 async def is_maintenance(user_id: int) -> bool:
     if await is_admin(user_id): return False
     data = await maintenance_collection.find_one({"_id": "maintenance"})
     return data is not None and data.get("maintenance") == "on"
 
+# --- Auto Delete Settings ---
 async def get_auto_delete_status() -> bool:
     data = await settings_collection.find_one({"_id": "auto_delete"})
     return data.get("status", True) if data else True
@@ -122,6 +128,18 @@ async def set_auto_delete_status(status: bool):
         upsert=True
     )
 
+async def get_auto_delete_time() -> int:
+    data = await settings_collection.find_one({"_id": "auto_delete_time"})
+    return data.get("time", 600) if data else 600
+
+async def set_auto_delete_time(time_in_seconds: int):
+    await settings_collection.update_one(
+        {"_id": "auto_delete_time"}, 
+        {"$set": {"time": time_in_seconds}}, 
+        upsert=True
+    )
+
+# --- Protect Content Settings ---
 async def get_protect_status() -> bool:
     data = await settings_collection.find_one({"_id": "protect_content"})
     return data.get("status", False) if data else False
