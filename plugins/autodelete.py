@@ -1,5 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from config import START_PIC
 from helper_func import safe_edit, get_input, get_readable_time
 from database.database import is_admin, get_auto_delete_status, set_auto_delete_status, get_auto_delete_time, set_auto_delete_time
 
@@ -54,31 +55,29 @@ async def autodelete_callbacks(client: Client, query: CallbackQuery):
         ]))
         
     elif data == "autodelete_set_time":
-        cancel_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="autodelete_menu")]])
         back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="autodelete_menu")]])
-        
         prompt_text = "<b>SEND ME A TIME IN LIKE THIS - 1h OR 15m\n\n/cancel - CANCEL THIS PROCESS.</b>"
         
-        # 1. Ask the user in the chat for the time
-        text = await get_input(client, query.message, prompt_text, cancel_keyboard)
+        # 1. Ask the user in chat
+        text = await get_input(client, query.message, prompt_text, back_keyboard)
         if not text: return 
         
-        # 2. Convert their message to seconds
+        # 2. Convert input to seconds
         time_in_seconds = parse_time(text)
         if time_in_seconds < 10: 
-            return await query.message.reply(
-                "❌ **Invalid format!** Please use formats like `1h`, `15m`, or `30s`.", 
-                quote=True, 
+            return await query.message.reply_photo(
+                photo=START_PIC,
+                caption="❌ **Invalid format!** Please use formats like `1h`, `15m`, or `30s`.", 
                 reply_markup=back_keyboard
             )
             
-        # 3. Save it to the database
+        # 3. Save to database
         await set_auto_delete_time(time_in_seconds)
         
-        # 4. Confirm success with a Back button attached!
-        await query.message.reply(
-            f"✅ Auto-delete timer successfully set to **{get_readable_time(time_in_seconds)}**.", 
-            quote=True, 
+        # 4. Confirm success with Image and Back button
+        await query.message.reply_photo(
+            photo=START_PIC,
+            caption=f"✅ Auto-delete timer successfully set to **{get_readable_time(time_in_seconds)}**.", 
             reply_markup=back_keyboard
         )
         
